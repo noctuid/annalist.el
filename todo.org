@@ -1,0 +1,33 @@
+#+TODO: TODO(t) MAYBE(m) IN-PROGRESS(p) WAITING(w) | DONE(d) CANCELED(c)
+* Most Important
+** TODO Test plist merging
+** TODO Check if duplicate recording/record deletion still happens
+** TODO Check that local keybinding recording/displaying works as expected
+** TODO Add function (that can be added to hook) to multiline src block entries with lispy
+** TODO Allow preprocessing
+For example, to handle ='normal 'global= and =='evil-normal-state-map nil= (which are actually the same)
+
+* Important
+** MAYBE Remove :test if possible
+This is something that should work automatically
+** TODO Local predicates for row entries
+** TODO Double check that all general.el and evil-collection functionality is present
+** TODO Specify actual org version in dependencies
+** TODO Todos in annalist.el
+** TODO Escaping = and ~ for verbatim and code?
+Or don't use verbatim and code?
+* Minor
+** TODO Allow custom truncation
+e.g. lambda to (lambda () …) like in evil-collection
+
+** TODO maybe a keyword similar to :update but before printing
+** MAYBE Allow for custom org showall setting?
+** MAYBE Customizable display buffer name?
+Like in evil-collection currently. I'm not sure if there would be a reason to change the name.
+
+** MAYBE support for unrecording?
+For example with an :unrecord (or :burn or :burn-page)
+
+* Very Minor
+** MAYBE Data structure independent from how data is presented
+This seems too difficult to do for the small benefit. Different views of the records (e.g. changing some heading items to table entries or vice versa) is still possible by maintaining multiple data stores. This could potentially be expanded on in the future.
