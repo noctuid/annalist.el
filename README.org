@@ -3,11 +3,11 @@
 
 * Usage
 ** Terminology
-item - and individual recorded item; may be displayed as a heading or as a table entry (e.g. a key such as =C-c=)
-data - a list of related, printable items corresponding to one piece of information (e.g. a single keybinding: a list of a keymap, key, and definition)
-metadata - a plist of information about a data list that should not be printed
-record - a cons of data and metadata
-store/"tome" - a collection of records
+- item - and individual recorded item; may be displayed as a heading or as a table entry (e.g. a key such as =C-c=)
+- data - a list of related, printable items corresponding to one piece of information (e.g. a single keybinding: a list of a keymap, key, and definition)
+- metadata - a plist of information about a data list that should not be printed
+- record - a cons of data and metadata
+- store/"tome" - a collection of records
 
 ** Settings
 =annalist-override-settings= can be set to a settings plist (as is specified for ~annalist-define-type~) that will override the defaults. It is meant to be let-bound (not set globally) around ~annalist-record~ or ~annalist-describe~ in order to create custom sorting/filtering functions for a specific type of recorded data (e.g. to create a function to only show the keybindings made for a specific mode or package).
