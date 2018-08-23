@@ -29,7 +29,7 @@
 
 ;;; Code:
 (require 'cl-lib)
-(require 'subr-x)
+(eval-when-compile (require 'subr-x))
 
 (defgroup annalist nil
   "Record and display information such as keybindings."
