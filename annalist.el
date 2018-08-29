@@ -39,7 +39,6 @@
 (defcustom annalist-describe-hook nil
   "Hook run in the description buffer after it has been populated.
 The buffer is editable when this hook is run."
-  :group 'annalist
   :type 'hook)
 
 ;; * General Helpers
@@ -521,7 +520,6 @@ definition is different from the current one (e.g. evaluating a `define-key'
 call twice will not affect the stored previous definition the second time). When
 set to nil, only update the previous definition when the key was previously
 unbound/nil."
-  :group 'annalist
   ;; can't think of a use case, but add 'always if requested
   ;; t is equivalent of on-change
   :type '(choice
