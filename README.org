@@ -3,126 +3,139 @@
 
 * Usage
 ** Terminology
-- item - and individual recorded item; may be displayed as a heading or as a table entry (e.g. a key such as =C-c=)
-- data - a list of related, printable items corresponding to one piece of information (e.g. a single keybinding: a list of a keymap, key, and definition)
-- metadata - a plist of information about a data list that should not be printed
-- record - a cons of data and metadata
-- store/"tome" - a collection of records
+- item - and individual recorded item; may be displayed as a heading or as a table column entry (e.g. a key such as =C-c=)
+- record - a list of related, printable items corresponding to one piece of information (e.g. a single keybinding: a list of a keymap, key, and definition)
+- metadata - a plist of information about a data list that should not be printed; appears as the last item in a record
+- tome - a collection of records of a specific type
 
 ** Settings
-=annalist-override-settings= can be set to a settings plist (as is specified for ~annalist-define-type~) that will override the defaults. It is meant to be let-bound (not set globally) around ~annalist-record~ or ~annalist-describe~ in order to create custom sorting/filtering functions for a specific type of recorded data (e.g. to create a function to only show the keybindings made for a specific mode or package).
-
-For each type, there is a corresponding =annalist-<type>-override-settings= (e.g. =annalist-keybinding-override-settings=). The primary intent of these variables is allow a user (not package) to alter the default formatting for a type (i.e. settings related to how information is recorded should not be altered). It should be set globally (not let-bound). Here is an example:
-#+begin_src emacs-lisp
-(setq annalist-keybindings-override-settings
-      (list :max-width 40
-            ;; extract items > 40 characters into footnotes
-            :extractp (lambda () t)))
-#+end_src
-
-Annalist also provides =annalist-describe-hook= that runs in annalist description buffers after they have been populated but before they are marked read-only:
+Annalist provides =annalist-describe-hook= which is run in annalist description buffers after they have been populated but before they are marked read-only:
 #+begin_src emacs-lisp
 (add-hook 'annalist-describe-hook
           (lambda () (visual-fill-column-mode -1)))
 #+end_src
 
 ** Defining New Types
-Annalist provides the function ~annalist-define-type~ for defining new types of tomes:
+Annalist provides the function ~annalist-define-tome~ for defining new types of tomes:
 #+begin_src emacs-lisp
-(annalist-define-type 'battles
-  :key-index 1
-  :table-start-index 1
-  :items (list 0 (list :title "Year")
-               1 (list :title "Name")
-               2 (list :title "Casualties")
-               ...))
+(annalist-define-tome 'battles
+  '(:primary-key (year name)
+    :table-start-index 1
+    year
+    name
+    casualties
+    ...))
 #+end_src
 
-This function creates the variables that will store the specified settings and records for the new type. At minimum, a type definition must include =:key-index=, =:table-start-index=, and a =:title= for each item specified in =:items= (or at least the ones that are table entries).
+At minimum, a type definition must include =:primary-key=, =:table-start-index=, and a symbol for each item records should store. Items should be defined in the order they should appear in org headings and then in the table.
 
-*** Available Keywords
-Top-level settings are for each record as whole. Settings under =:items= are for individual items in a record.
+*** Top-level Settings
+These settings apply to the entirety of the recorded information.
 
-**** Top-level Settings
-These settings apply to the entirety of the recorded information:
 - =:table-start-index= - the index of the first item to be printed in an org table; previous items are printed as headings (default: none)
-- =:key-index= - the index of the item that uniquely identifies the record; used with that item's =:test= value to check for an old record that should be replaced/updated (default: none)
-- =:test= - test function used to compare the data in records to prevent the addition of duplicates (default: ~equal~; generally should be unnecessary to change; may be removed)
-- =:record-update= - a function used to update a record before recording it; this can be used to, for example, update an item corresponding to the previous value of another item; the function is called with =old-record= (nil if none), =new-record=, and =settings=; see ~annalist--update-keybindings~ for an example of how to create such a function (default: none)
-- =:predicate= - a function that is passed the entire record and returns nil if the record should not be printed (default: none)
-- =:sort= - a function used to sort records in each printed table; the function is passed two records and and should return non-nil if the first record should come first (default: none; table printed in recorded order)
+- =:primary-key= - the item or list of items that uniquely identifies the record; used with the  =:test= values for those items to check for an old record that should be replaced/updated (default: none)
+- =:record-update= - a function used to update a record before recording it; this can be used to, for example, set the value of an item to store the previous value of another item; the function is called with =old-record= (nil if none), =new-record=, and =settings=; see ~annalist--update-keybindings~ for an example of how to create such a function (default: none)
+- =:defaults= - a plist of default item settings; see below for valid item settings (default: none)
 
-There is also a special =:inherit= keyword that can be used to create a new type that is based on another type:
+*** Item Settings
+Item settings only apply to a specific item. Defaults for items that don't explicitly specify a setting can be set using the top-level =:defaults= keyword.
+
+- =:test= - test function used for comparing items (default: ~equal~; generally should be unnecessary to change)
+
+*** =:update-record= Settings Argument
+The settings plist past to the =:record-update= function contains all information for both the tome type and view. The information is converted into a valid plist and some extra keywords are added. Here is an example:
 #+begin_src emacs-lisp
-(annalist-define-type 'alt-style-keybindings
-  :inherit 'keybindings
-  ;; also print evil state in table
-  :table-start-index 1
+'(:table-start-index 2
+  :primary-key (keymap state key)
+  ;; :key-indices and :metadata-index are generated for convenience
+  :key-indices (2 1 0)
+  :final-index 4
+  :metadata-index 5
+  ;; item settings can be accessed by their symbol or their index
+  keymap (:name keymap :format annalist-code)
+  0 (:name keymap :format annalist-code)
   ...)
 #+end_src
 
-**** Item Settings
-The =:items= keyword is used to specify a plist of items stored in a record. These settings can be specified globally (i.e. directly in the =:items= plist) and/or locally (i.e. in the plist corresponding to a numbered item) unless specified otherwise. Global settings act as defaults for items without a corresponding local setting.
+** Defining Views
+Views contain settings for formatting and displaying recorded information. Settings from the type definition cannot be changed later. On the other hand, views are for all settings that a user may want to change. They are defined using the same format as tome types:
 #+begin_src emacs-lisp
-;; (Note that this is not how the keybindings type is actually defined)
-(annalist-define-type 'keybindings
-  :table-start-index 1
-  :key-index 1
-  :items (list
-          ;; capitalize item names when printing by default
-          :format #'capitalize
-          0 (list :title "Keymap")
-          1 (list :title "Key"
-                  ;; surround key with = instead of capitalizing
-                  :format #'annalist-verbatim)
-          2 (list :title "definition"
-                  ;; perform no formatting on definition
-                  :format nil)))
+(annalist-define-view 'battles 'default
+  '(:defaults (:format capitalize)
+    year
+    name
+    (casualties :title "Deaths")
+    ...))
 #+end_src
 
-Sorting/filtering:
-- =:predicate= - a function that is passed the item and returns nil if the record should not be printed (default: none)
-- =:prioritize= - list of items that should be printed before any others; only applicable to heading items or the record key (default: none)
-- =:sort= - a function used to records; only valid for heading items or the record key; a sorter for the record key will be overridden by a top-level sorter; the function is passed two items and and should return non-nil if the first item should come first (default: none; printed in recorded order)
+The =default= view is what ~annalist-describe~ will use if no view name is explicitly specified.
+
+*** Top-level Settings
+These settings apply to the entirety of the recorded information.
+
+- =:predicate= - a function that is passed the entire record and returns non-nil if the record should be printed (default: none)
+- =:sort= - a function used to sort records in each printed table; the function is passed two records and and should return non-nil if the first record should come first (default: none; tables are printed in recorded order)
+- =:defaults= - a plist of default item settings; see below for valid item settings (default: none)
+
+There is also a special =:inherit= keyword that can be used to create a new type of tome that is based on another type:
+#+begin_src emacs-lisp
+(annalist-define-view 'keybindings 'alternate
+  :inherit 'keybindings
+  ;; override title for key column
+  '((key :title "Keybinding")
+    ...))
+#+end_src
+
+*** Item Settings
+Item settings only apply to a specific item. Defaults for items that don't explicitly specify a setting can be set using the top-level =:defaults= keyword.
+#+begin_src emacs-lisp
+(annalist-define-view 'keybindings 'my-view
+  '(:defaults (:format #'capitalize)
+    ;; surround key with = instead of capitalizing
+    (key :format #'annalist-verbatim)
+    ;; perform no formatting on definition
+    (definition :format nil)))
+#+end_src
+
+Sorting/filtering (only for items displayed in headings):
+- =:predicate= - a function that is passed the item and returns non-nil if it should be printed; only applicable to heading items (default: none)
+- =:prioritize= - list of items that should be printed before any others; only applicable to heading items (default: none)
+- =:sort= - a function used to sort records; only applicable to heading items; the function is passed two items and and should return non-nil if the first item should come first (default: none; printed in recorded order)
 
 Formatting:
-- =:title= - a description of the item; used as the column title (default: none; local only)
-- =:format= - function to run on the item before it is printed (e.g. ~#'capitalize~, ~#'annalist-code~, ~#'annalist-verbatim~, etc.); note that this is run on the item as-is if it has not been truncated, so the function may need to convert the item to a string first; has no effect if the item is extracted to a footnote/source block (default: none)
+- =:title= - a description of the item; used as the column title (default: capitalize the symbol name; local only)
+- =:format= - function to run on the item value before it is printed (e.g. ~#'capitalize~, ~#'annalist-code~, ~#'annalist-verbatim~, etc.); note that this is run on the item as-is if it has not been truncated, so the function may need to convert the item to a string first; has no effect if the item is extracted to a footnote/source block (default: none)
 - =:max-width= - the max character width for an item; note that this is compared to the item as-is before any formatting (default: 50)
 - =:extractp= - function to determine whether to extract longer entries into footnotes instead of truncating them; (default: ~listp~)
 - =:src-block-p= function to determine whether to extract to a source block when the =:extractp= function returns non-nil (default: ~listp~)
 
-- =:test= - test function used for comparing items (default: ~equal~; generally should be unnecessary to change)
-
 ** Recording
-~annalist-record~ is used to record information. It requires three arguments: =name= =type= =data=. The =name= argument will usually be the same as the package prefix that is recording the data. =annalist= is reserved for this package. =type= is the type of data to record, and =data= is the actual data. Optionally, the user can also specify =metadata= afterwards. Buffer-local records should additionally specify =:local t=. Here is an example:
+~annalist-record~ is used to record information. It requires three arguments: =annalist= =type= =record=. The =annalist= argument will usually be the same as the package prefix that is recording the data. ='annalist= is reserved for this package. =type= is the type of data to record, and =record= is the actual data. Optionally, the user can also specify metadata that won't be printed after the final item. Buffer-local records should additionally specify =:local t=. Here is an example:
 #+begin_src emacs-lisp
 (annalist-record 'me 'keybindings
-                 (list 'global-map nil (kbd "C-+") #'text-scale-increase nil)
-                 (list :zoom-related-binding t))
+                 (list
+                  ;; keymap state key definition previous-definition
+                  'global-map nil (kbd "C-+") #'text-scale-increase nil
+                  ;; metadata can be specified after final item
+                  (list :zoom-related-binding t)))
 #+end_src
 
-Some items can potentially be recorded as nil. In the prevoius example, the evil =state= is recorded as nil (which will always be the case for non-evil users). When a heading item is nil, the heading at that level will just be skipped/not printed.
-
-# TODO =:package= inference for keybindings if :package not present (based on prefix)
+Some items can potentially be recorded as nil. In the previous example, the evil =state= is recorded as nil (which will always be the case for non-evil users). When a heading item is nil, the heading at that level will just be skipped/not printed.
 
 ** Describing
-~annalist-describe~ is used to describe information. It takes two arguments: =name= =type=. For example:
+~annalist-describe~ is used to describe information. It takes three arguments: =name= =type view=. =view= is optional (defaults to =default=). For example:
 #+begin_src emacs-lisp
 (annalist-describe 'me 'keybindings)
 #+end_src
 
-It is possible to have custom filtering/sorting behavior by setting =annalist-override-plist=:
+It is possible to have custom filtering/sorting behavior by using a custom view:
 #+begin_src emacs-lisp
-(defun my-describe-active-keybindings ()
-  (interactive)
-  (let ((annalist-override-settings
-         (list :items
-           ;; :title is only specified for readability (not actually changing)
-           (list 0 (list :title "Keymap"
-                     ;; only show keys bound in active keymaps
-                     :predicate #'annalist--active-keymap-p
-                     ;; sort keymaps alphabetically
-                     #'annalist--string-<)))))
-    (annalist-describe 'my 'keybindings)))
+(annalist-define-view 'keybindings 'active-keybindings-only
+  '((keymap
+     ;; only show keys bound in active keymaps
+     :predicate #'annalist--active-keymap
+     ;; sort keymaps alphabetically
+     :sort #'annalist--string-<)))
+
+(annalist-describe 'my 'keybindings 'active-keybindings-only)
 #+end_src

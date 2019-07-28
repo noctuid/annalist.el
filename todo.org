@@ -1,26 +1,61 @@
 #+TODO: TODO(t) MAYBE(m) IN-PROGRESS(p) WAITING(w) | DONE(d) CANCELED(c)
-* Most Important
-** TODO Test plist merging
-** TODO Check if duplicate recording/record deletion still happens
-** TODO Check that local keybinding recording/displaying works as expected
+
+* Most Important (before initial release)
+** DONE correctly handle item vs default settings
+CLOSED: [2019-07-29 Mon 18:49]
+
+** TODO Add tests coverying at least the basics and all keywords at all levels
+*** TODO Test plist merging
+*** TODO Check if duplicate recording/record deletion still happens
+*** TODO Check that local keybinding recording/displaying works as expected
 ** TODO Add function (that can be added to hook) to multiline src block entries with lispy
+** TODO Add functions to convert between plist and ordered records
+- Add argument to allow recording using plist (with metadata as arg to =t= for example)
+- Mention in readme that could use this function to convert new-record or old-record to a plist; (plist-get 'key new-record) is more readable than (nth <n> new-record)
+
 ** TODO Allow preprocessing
 For example, to handle ='normal 'global= and =='evil-normal-state-map nil= (which are actually the same)
 
-* Important
-** MAYBE Remove :test if possible
-This is something that should work automatically
-** TODO Local predicates for row entries
+also
+If `evil-collection-define-key` starts to wrap `evil-define-minor-mode`
+if evil-collection starts using general.el, it will already do this
+
 ** TODO Double check that all general.el and evil-collection functionality is present
+** TODO Add quotes to readme
+** TODO Put helper functions in readme
+** TODO update evil-collection PR
+(eval-when-compile (require 'subr-x)) (also probably no longer necessary in evil-collection)
+
+test evil-collectin output
+
 ** TODO Specify actual org version in dependencies
+maybe ask on melpa
+
+* Important (but after melpa)
 ** TODO Todos in annalist.el
+*** TODO option to do newest to oldest
+*** TODO delete empty tables then headings
+*** TODO handle active map check for minor mode def
 ** TODO Escaping = and ~ for verbatim and code?
 Or don't use verbatim and code?
-* Minor
+
+** TODO More builtin types (settings, hooks, and advice)
+** MAYBE Remove :test if possible
+This is something that should work automatically
+probably okay to keep
+
+if don't, add disclaimer about hash table test
+must define tests
+
+* Minor (after melpa)
 ** TODO Allow custom truncation
 e.g. lambda to (lambda () …) like in evil-collection
 
-** TODO maybe a keyword similar to :update but before printing
+** TODO Allow adding extra entries on display (calculated entries)
+** MAYBE =:package= inference for keybindings if :package not present (based on prefix)
+** MAYBE maybe a keyword similar to :update but before printing
+what was the use case for this
+
 ** MAYBE Allow for custom org showall setting?
 ** MAYBE Customizable display buffer name?
 Like in evil-collection currently. I'm not sure if there would be a reason to change the name.
@@ -28,6 +63,28 @@ Like in evil-collection currently. I'm not sure if there would be a reason to ch
 ** MAYBE support for unrecording?
 For example with an :unrecord (or :burn or :burn-page)
 
+** MAYBE Local predicates for row entries
+predicate for entire row seems sufficient
+
 * Very Minor
-** MAYBE Data structure independent from how data is presented
-This seems too difficult to do for the small benefit. Different views of the records (e.g. changing some heading items to table entries or vice versa) is still possible by maintaining multiple data stores. This could potentially be expanded on in the future.
+** CANCELED Data structure independent from how data is presented
+This seems too difficult to do for the small benefit. Different views of the records (e.g. changing some heading items to table entries or vice versa) is still possible by maintaining multiple data stores.
+
+See [[*Emacssql Storage][Emacssql Storage]].
+
+* MAYBE Emacsql Storage
+The current storage method has some limitations. It's not possible to change the =:table-start-index= without recording information multiple times. Rearranging the order of the items before =:table-start-index= would also be fairly complicated. Multiple views and more complex filtering, sorting, rearranging, etc. would be much easier with actual sql queries. A database could either be used to record information immediately or created on demand when describing to prevent having to create it during startup. This should not be the default as it would likely cause a lot of confusion.
+
+Here is a list of some things this would make easy:
+- heading/column reordering (hard for headings because of storage data structure)
+- changing at which item to start printing the table
+- selectively not printing some items (hard for headings because of storage data structure)
+- group by, filtering, sorting, etc. (e.g. sorting by created or updated time)
+- easy merging of records recorded by different packages (could workaround by having an 'all annalist)
+- math if ever needed
+
+Working around a lot of these issues without a database is possible but would be pretty difficult or take a lot of extra space and possibly time (lots of conversion from one storage format to another).
+
+Whether using a database is worth the extra complexity is yet to be determined, but the current definition syntax should at least be extensible to allow it if desired.
+
+It would probably make sense to convert query results back to the form already used for storage so existing keywords would still work, and so that another implementation for describing would not be necessary.

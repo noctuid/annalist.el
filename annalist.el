@@ -1,4 +1,4 @@
-;; annalist.el --- Record and display information such as keybindings  -*- lexical-binding: t; -*-
+;;; annalist.el --- Record and display information such as keybindings  -*- lexical-binding: t; -*-
 
 ;; Author: Fox Kiester <noct@posteo.net>
 ;; URL: https://github.com/noctuid/annalist.el
@@ -25,7 +25,7 @@
 ;; This library supports recording information (such as keybindings) and later
 ;; displaying that information in Org tables.
 
-;; For more information see the README in the online repository.
+;; For more information see the repository README.
 
 ;;; Code:
 (require 'cl-lib)
@@ -41,19 +41,29 @@
 The buffer is editable when this hook is run."
   :type 'hook)
 
-;; * General Helpers
-(defun annalist--symbol (name)
-  "Preface NAME with \"annalist-\", returning an interned symbol."
-  (intern (format "annalist-%s" name)))
+;; (defcustom annalist-storage-type 'builtin
+;;   "The method for storage.
+;; The builtin method uses builtin data structures for storing information but does
+;; not support full functionality. The emacsql method requires using an external
+;; database but supports for functionality."
+;;   :type '(choice
+;;           (const :tag "Use builin data structures" builtin)
+;;           (const :tag "Use an sql database" emacsql)))
 
-(defun annalist--local-symbol (name)
-  "Preface NAME with \"annalist-local-\", returning an interned symbol."
-  (intern (format "annalist-local-%s" name)))
+;; * Storage Variables
+(defvar annalist--tomes nil
+  "Stores recorded information for defined tomes.")
 
-(defun annalist--override-settings-symbol (name)
-  "Return \"annalist-NAME-override-settings\" as an interned symbol."
-  (intern (format "annalist-%s-override-settings" name)))
+(defvar-local annalist--local-tomes nil
+  "Stores buffer-local recorded information for defined tomes.")
 
+(defvar annalist--tomes-settings nil
+  "Stores settings for defined tomes.")
+
+(defvar annalist--tomes-views (make-hash-table :test #'equal)
+  "Stores possible views for defined tomes.")
+
+;; * List Helpers
 (defun annalist--merge-lists (a b &optional test)
   "Return the result of merging the lists A in B.
 Merging is done by adding items in B that are not in A (as tested by TEST) to
@@ -69,144 +79,176 @@ When the same property exists in both A and B, prefer A's value."
              do (setq res (plist-put res prop val)))
     res))
 
-(defun annalist--merge-settings-plists (a b)
+(defun annalist--merge-nested-plists (a b)
   "Return the result of merging the settings plists A and B.
 When the same property exists in both A and B, prefer A's value unless the value
-is a nested plist. In that case, merge the nested plists of the two. The values
-for :items and for numeric properties are assumed to be plists themselves. The
-values for other properties are not considered to be plists."
+is a nested plist. In that case, merge the nested plists of the two. This
+function only handles one level of nesting."
   (let ((res (cl-copy-list a)))
     (cl-loop for (prop val) on b by #'cddr
              if (not (plist-get res prop))
              do (setf (cl-getf res prop) val)
              else
-             if (eq prop :items)
+             if (listp val)
              do (setf (cl-getf res prop)
-                      (annalist--merge-settings-plists (plist-get res prop)
-                                                       val))
-             else
-             if (numberp prop)
-             do (setf (cl-getf res prop)
-                      (annalist--merge-plists (plist-get res prop) val)))
+                      (annalist--merge-plists (plist-get res prop)
+                                              val)))
     res))
-
-(defun annalist--plist-inherit (plist)
-  "Return PLIST merged with its inherited plist, if any.
-The :inherit keyword specifies the type (e.g. \"keybindings\") to inherit
-values from. Values in PLIST take precedence."
-  (let ((inherit-plist (let* ((it (plist-get plist :inherit))
-                              (sym (annalist--symbol it)))
-                         (when it
-                           (symbol-plist sym)))))
-    (if inherit-plist
-        (annalist--merge-settings-plists plist inherit-plist)
-      plist)))
-
-(defvar annalist-override-settings nil
-  "Property list of settings that will override settings for any type.
-Note that an :inherit property in this plist will be ignored.")
-
-(defun annalist--settings (type)
-  "Return the settings that should be used for TYPE.
-Settings in TYPE's override plist take precedence over TYPE's default settings,
-and settings in `annalist-override-settings' have the highest precedence."
-  (let ((type-settings (annalist--plist-inherit
-                        (symbol-plist (annalist--symbol type))))
-        (type-override-settings (symbol-value
-                                 (annalist--override-settings-symbol type))))
-    (annalist--merge-settings-plists
-     annalist-override-settings
-     (annalist--merge-settings-plists type-override-settings type-settings))))
-
-(defun annalist--store (type &optional local)
-  "Return the store corresponding to TYPE and LOCAL.
-If LOCAL is non-nil, return the buffer-local store for TYPE. Otherwise return
-the global store for TYPE."
-  (let ((global-store (symbol-value (annalist--symbol type)))
-        (local-store (symbol-value (annalist--local-symbol type))))
-    (if local
-        local-store
-      global-store)))
 
 (defun annalist--get (plist fallback-plist keyword)
   "From PLIST or FALLBACK-PLIST get the corresponding value for KEYWORD.
 FALLBACK-PLIST will be checked when KEYWORD does not exist in PLIST (but not in
 cases where it is explicitly specified in PLIST as nil)."
   (cl-getf plist keyword
-           (cl-getf fallback-plist keyword)))
+           (plist-get fallback-plist keyword)))
 
-(defun annalist--test (settings &optional fallback-settings)
-  "Return the test specified by :test in SETTINGS or FALLBACK-SETTINGS.
-If :test is in neither plist, return #'equal."
-  (or (annalist--get settings fallback-settings :test)
+(defun annalist--item-get (settings item prop)
+  "Extract an item-specific setting from SETTINGS.
+SETTINGS is a settings plist of the form (ITEM1 (PROP1 value1) :defaults (PROP1
+defaultvalue)). ITEM is the item to check for PROP for. PROP is the setting to
+check for (e.g. :format). If PROP does not appear in the ITEM's plist, return
+the value from the :defaults plist (or nil if the property is not specified in
+either)."
+  (let ((default-item-settings (plist-get settings :defaults))
+        (item-settings (plist-get settings item)))
+    (annalist--get item-settings default-item-settings prop)))
+
+(defun annalist--test (settings item)
+  "Return the test specified by :test in SETTINGS for ITEM's plist.
+SETTINGS is a plist in the form (ITEM1 (:test 'eq) ITEM2 (:test 'my-test)
+:defaults (:test 'some-test)). If :test is not in ITEM's plist, check for :test
+in the :defaults plist. If :test is in neither plist, return #'equal."
+  (or (annalist--item-get settings item :test)
       #'equal))
 
+(defun annalist--plistify-settings (definition-settings)
+  "Convert DEFINITION-SETTINGS to an internally useable plist.
+DEFINITION-SETTINGS is a list of arguments for `annalist-define-tome'.
+For example:
+'(:test my-equal
+  :primary-key (keymap key)
+  keymap
+  key
+  definition)
+
+would become (ignoring order):
+'(:test my-equal
+  :primary-key (keymap key)
+  :key-indices (0 1)
+  :final-index 2
+  :metadata-index 3
+  0 (:name keymap)
+  1 (:name key)
+  2 (:name definition)
+  keymap (:name keymap)
+  key (:name key)
+  definition (:name definition))"
+  (let ((counter 0)
+        primary-key
+        key-indices
+        plist)
+    (cl-loop for (key val) on definition-settings by #'cddr
+             if (eq key :primary-key)
+             do (setq primary-key (if (listp val)
+                                      val
+                                    (list val))))
+    (while definition-settings
+      (let ((entry (pop definition-settings)))
+        (if (keywordp entry)
+            (setq plist (plist-put plist entry (pop definition-settings)))
+          (let* ((item (if (listp entry)
+                           (car entry)
+                         entry))
+                 (item-definition-settings (append (list :name item)
+                                                   (and (listp entry)
+                                                        (cdr entry)))))
+            (setq plist (plist-put plist item item-definition-settings))
+            (setq plist (plist-put plist counter item-definition-settings))
+            (when (memq item primary-key)
+              (push counter key-indices))
+            (cl-incf counter)))))
+    (append (list :key-indices key-indices
+                  :final-index (1- counter)
+                  :metadata-index counter)
+            plist)))
+
+(defun annalist--tome (type &optional local)
+  "Return the tome for TYPE and LOCAL, creating it if necessary."
+  (let ((tome (if local
+                  (plist-get annalist--local-tomes type)
+                (plist-get annalist--tomes type))))
+    (or tome
+        (progn
+          (if local
+              (setq annalist--local-tomes
+                    (plist-put annalist--local-tomes type
+                               (make-hash-table :test #'equal)))
+            (setq annalist--tomes
+                  (plist-put annalist--tomes type
+                             (make-hash-table :test #'equal))))
+          (annalist--tome type local)))))
+
 ;; * Type Definition
-(defun annalist-define-type (type &rest settings)
-  "Create a new type of thing (or \"tome\") that can be recorded called TYPE.
-This will automatically create global and local stores variables called
-\"annalist-TYPE\" and \"annalist-local-TYPE\" (e.g. `annalist-keybindings' and
-`annalist-local-keybindings'). It will also create a variable called
-\"annalist-TYPE-override-settings\" that can be changed to override the default
-SETTINGS. SETTINGS should be a plist of annalist type settings; see the README
-for more information."
-  (declare (indent defun))
-  (let* ((prefixed-type (annalist--symbol type))
-         (store prefixed-type)
-         (local-store (annalist--local-symbol type))
-         (type-override-plist (annalist--override-settings-symbol type))
-         (test (annalist--test settings)))
-    (eval `(defvar ,store (make-hash-table :test ',test)
-             ,(format "Store (or \"tome\") for recording information about %s."
-                      type)))
-    (eval `(defvar-local ,local-store (make-hash-table :test ',test)
-             ,(format
-               "Local store (or \"tome\") for recording information about %s."
-               type)))
-    (eval `(defvar ,type-override-plist nil
-             ,(format
-               "Settings that will override the defaults for the %s type."
-               type)))
-    (cl-loop for (prop value)
-             on settings by #'cddr
-             do (put prefixed-type prop value))))
+(defun annalist--get-tome-settings (type)
+  "Return the settings plist for TYPE."
+  (plist-get annalist--tomes-settings type))
+
+(defun annalist-define-tome (type settings)
+  "Create a new type of thing that can be recorded called TYPE.
+SETTINGS be a list of items and any settings necessary for recording them."
+  (declare (indent 1))
+  (setq annalist--tomes-settings
+        (plist-put annalist--tomes-settings type
+                   (annalist--plistify-settings settings))))
+
+;; * View Definition
+(defun annalist--get-view-settings (type view)
+  "Return the settings plist corresponding to TYPE and VIEW."
+  (unless view
+    (setq view 'default))
+  (gethash (cons type view) annalist--tomes-views))
+
+(gv-define-setter annalist--get-view-settings (val type view)
+  `(puthash (cons ,type (or ,view 'default)) ,val annalist--tomes-views))
+
+(cl-defun annalist-define-view (type name settings &key inherit)
+  "Define a display method for TYPE called NAME.
+To define the default view SETTINGS, NAME should be 'default. If INHERIT is
+non-nil, inherit SETTINGS from that view."
+  (declare (indent 2))
+  (setq settings (annalist--plistify-settings settings))
+  (when inherit
+    (setq settings (annalist--merge-nested-plists
+                    settings
+                    (annalist--get-view-settings type inherit))))
+  (setf (annalist--get-view-settings type name) settings))
 
 ;; * Recording
-(defun annalist--record-record (data metadata records settings)
-  "Non-destructively add DATA and METADATA to RECORDS, returning RECORDS.
-SETTINGS is the plist of settings for the type of thing the record corresponds
-to (e.g. keybindings).
+(defun annalist--record-record (new-record existing-records settings)
+  "Non-destructively add NEW-RECORD to EXISTING-RECORDS and return it.
+SETTINGS is the plist of settings for the type of thing/tome the record
+corresponds to (e.g. keybindings).
 
-When DATA matches the data in an old record exactly (as determined by :test in
-SETTINGS or `equal'), update the old record's metadata with METADATA but keep
-its order in RECORDS. Otherwise, when :key-index is present in SETTINGS and
-optionally :test in that index's local or default settings, use their values to
-check for a matching old record. When one is found, remove it and add the new
-record (DATA . METADATA) to the front of RECORDS. Only compare data, not
-metadata.
+When the primary key in NEW-RECORD matches that in an old record exactly (as
+determined by :test in SETTINGS or `equal'), remove the old record and add
+NEW-RECORD to the front of EXISTING-RECORDS.
 
-When :record-update is present, use its value to update the new record (e.g. to
-update a \"previous definition\" item). An update function is passed the old
-record (nil if none), (DATA . METADATA), and SETTINGS. It should return the
- (data . metadata) to store."
-  (let* ((test (annalist--test settings))
-         (key-index (plist-get settings :key-index))
-         (items-settings (plist-get settings :items))
-         (key-settings (plist-get items-settings key-index))
-         (key-test (annalist--test key-settings items-settings))
+When :record-update is present in SETTINGS, use its value to update the
+NEW-RECORD (e.g. to update a \"previous definition\" item). An update function
+is passed the old record (nil if none), NEW-RECORD, and SETTINGS. It should
+return an updated recording to store."
+  (let* ((key-indices (plist-get settings :key-indices))
          (update (plist-get settings :record-update))
-         (new-record (cons data metadata))
          old-record)
-    (setq records
-          (cl-loop for record in records
-                   if (funcall test data (car record))
-                   ;; keep record order, update metadata
-                   collect new-record
-                   else
-                   if (and key-index
-                           (funcall key-test
-                                    (nth key-index data)
-                                    (nth key-index (car record))))
+    (setq existing-records
+          (cl-loop for record in existing-records
+                   if (and key-indices
+                           (cl-dolist (index key-indices t)
+                             (let ((test (annalist--test settings index)))
+                               (unless (funcall test
+                                                (nth index new-record)
+                                                (nth index record))
+                                 (cl-return)))))
                    ;; remove old record and put new record at front
                    do (setq old-record record)
                    else
@@ -214,52 +256,46 @@ record (nil if none), (DATA . METADATA), and SETTINGS. It should return the
                    collect record))
     (when update
       (setq new-record (funcall update old-record new-record settings)))
-    (cons new-record records)))
+    (cons new-record existing-records)))
 
-(defun annalist--record-headings (data metadata store depth settings)
-  "Non-destructively record DATA and METADATA into STORE, returning STORE.
-DATA is a list of the headings and column entries for a row to be recorded.
+(defun annalist--record-headings (record store depth settings)
+  "Non-destructively record RECORD into STORE, returning STORE.
+RECORD is a list of the headings and column entries for a row to be recorded.
 DEPTH is the depth of the current item being recorded. SETTINGS is the plist of
-settings for the type of thing being recorded (e.g. keybindings). If DEPTH
+settings for the type of thing/tome being recorded (e.g. keybindings). If DEPTH
 exceeds the max heading depth in SETTINGS (i.e. it is the depth at which the
-table starts as specified by :table-start-index), insert DATA and METADATA into
-the current STORE and return it. Otherwise, record the current item as a heading
-in STORE and recurse with an incremented DEPTH.()"
+table starts as specified by :table-start-index), insert RECORD into the current
+STORE and return it. Otherwise, record the current item as a heading in STORE
+and recurse with an incremented DEPTH."
   (if (>= depth
           (plist-get settings :table-start-index))
-      (annalist--record-record data metadata store settings)
-    (let* ((items-settings (plist-get settings :items))
-           (item-settings (plist-get items-settings depth))
-           (test (annalist--test item-settings items-settings))
+      (annalist--record-record record store settings)
+    (let* ((test (annalist--test settings depth))
            (store (if (hash-table-p store)
                       store
                     (make-hash-table :test test)))
-           (next-store (gethash (nth depth data) store)))
-      (puthash (nth depth data)
-               (annalist--record-headings data metadata next-store (1+ depth)
-                                          settings)
+           (next-store (gethash (nth depth record) store)))
+      (puthash (nth depth record)
+               (annalist--record-headings record next-store (1+ depth) settings)
                store)
       store)))
 
 ;;;###autoload
-(cl-defun annalist-record (name type data &optional metadata &key local)
-  "In the store for NAME, TYPE, and LOCAL, record DATA and METADATA.
-NAME should correspond to the package/user (the \"annalist\") recording this
-information (e.g. 'general, 'me, etc.). TYPE is the type of information being
-recorded (e.g. 'keybindings). LOCAL corresponds to whether to store DATA only
-for the current buffer. This information together is used to select the
-store (or \"tome\") to DATA and METADATA (together a \"record\") should be
-stored in and later retrieved from with `annalist-describe'. DATA should be a
+(cl-defun annalist-record (annalist type record &key local)
+  "In the store for ANNALIST, TYPE, and LOCAL, record RECORD.
+ANNALIST should correspond to the package/user recording this information (e.g.
+'general, 'me, etc.). TYPE is the type of information being recorded (e.g.
+'keybindings). LOCAL corresponds to whether to store RECORD only for the current
+buffer. This information together is used to select where RECORD should be
+stored in and later retrieved from with `annalist-describe'. RECORD should be a
 list of items to record and later print as org headings and column entries in a
-single row. METADATA should be a plist of additional information; this
-information will not be printed but will later be usable for filtering, for
-example."
-  (let* ((settings (annalist--settings type))
-         (store (annalist--store type local))
-         (name-store (gethash name store)))
-    (puthash name
-             (annalist--record-headings data metadata name-store 0 settings)
-             store)))
+single row."
+  (let* ((tome (annalist--tome type local))
+         (settings (annalist--get-tome-settings type))
+         (store (gethash annalist tome)))
+    (puthash annalist
+             (annalist--record-headings record store 0 settings)
+             tome)))
 
 ;; * Printing
 (defun annalist--safe-pipe (item)
@@ -272,35 +308,28 @@ example."
 (defun annalist--print-table-header (settings)
   "Print an org table header using the titles from SETTINGS."
   (let ((i (plist-get settings :table-start-index))
-        (items-settings (plist-get settings :items))
-        item-settings)
-    (while (setq item-settings (plist-get items-settings i))
+        item-settings
+        title)
+    (while (setq item-settings (plist-get settings i))
+      (setq title (or (plist-get item-settings :title)
+                      (capitalize (symbol-name
+                                   (plist-get item-settings :name)))))
       (princ "|")
-      (princ (annalist--safe-pipe
-              (format "%s" (plist-get item-settings :title))))
+      (princ (annalist--safe-pipe (format "%s" title)))
       (cl-incf i)))
   (princ "|\n|-+-|\n"))
 
+;; TODO split this up
 (defun annalist--print-table (records settings)
   "Print an org table for RECORDS using SETTINGS."
+  ;; printed oldest to newest
+  ;; TODO could add option to do newest to oldest instead
   (setq records (nreverse records))
-  (let* ((items-settings (plist-get settings :items))
-         (predicate (plist-get settings :predicate))
+  (let* ((predicate (plist-get settings :predicate))
          (sorter (plist-get settings :sort))
-         (key-index (plist-get settings :key-index))
-         (key-sorter (annalist--get (plist-get items-settings key-index)
-                                    items-settings
-                                    :sort))
-         (sorted-records (cond (sorter
-                                (sort records sorter))
-                               (key-sorter
-                                (sort records
-                                      (lambda (x y)
-                                        (funcall key-sorter
-                                                 (nth key-index (car x))
-                                                 (nth key-index (car y))))))
-                               (t
-                                records)))
+         (sorted-records (if sorter
+                             (sort records sorter)
+                           records))
          (start-index (plist-get settings :table-start-index))
          footnotes)
     ;; print header
@@ -310,18 +339,13 @@ example."
       (when (or (null predicate)
                 (funcall predicate record))
         (cl-loop
-         for i from start-index below (length (car record))
+         for i from start-index to (plist-get settings :final-index)
          do
-         (let* ((item (nth i (car record)))
-                (item-settings (plist-get items-settings i))
-                (formatter (annalist--get item-settings items-settings
-                                          :format))
-                (max-width (annalist--get item-settings items-settings
-                                          :max-width))
-                (extractp (annalist--get item-settings items-settings
-                                         :extractp))
-                (src-block-p (annalist--get item-settings items-settings
-                                            :src-block-p))
+         (let* ((item (nth i record))
+                (formatter (annalist--item-get settings i :format))
+                (max-width (annalist--item-get settings i :max-width))
+                (extractp (annalist--item-get settings i :extractp))
+                (src-block-p (annalist--item-get settings i :src-block-p))
                 (too-long (and max-width
                                (> (length (format "%s" item))
                                   max-width))))
@@ -366,21 +390,17 @@ DEPTH is the depth of the current heading. SETTINGS contains information about
 which entries in STORE are headings and how to print them. If
 INCREASE-PRINT-DEPTH is non-nil, increase the level of all printed headings by
 one."
-  (if (>= depth
-          (plist-get settings :table-start-index))
+  (if (>= depth (plist-get settings :table-start-index))
       (annalist--print-table store settings)
-    (let* ((items-settings (plist-get settings :items))
-           (item-settings (plist-get items-settings depth))
-           (formatter (annalist--get item-settings items-settings :format))
-           (priority-keys (annalist--get item-settings items-settings
-                                         :prioritize))
+    (let* ((formatter (annalist--item-get settings depth :format))
+           (priority-keys (annalist--item-get settings depth :prioritize))
            (keys (hash-table-keys store))
-           (sorter (annalist--get item-settings items-settings :sort))
+           (sorter (annalist--item-get settings depth :sort))
            (sorted-keys (annalist--merge-lists priority-keys
                                                (if sorter
                                                    (sort keys sorter)
                                                  keys)))
-           (predicate (annalist--get item-settings items-settings :predicate))
+           (predicate (annalist--item-get settings depth :predicate))
            (asterisk-num (if increase-print-depth
                              (+ 2 depth)
                            (1+ depth))))
@@ -403,17 +423,20 @@ one."
 (declare-function outline-next-heading "outline")
 (defvar org-startup-folded)
 ;;;###autoload
-(defun annalist-describe (name type)
-  "Describe information recorded by NAME about TYPE.
-For example: (annalist-describe 'general 'keybindings)"
-  (let* ((settings (annalist--settings type))
-         (store (annalist--store type))
-         (local-store (annalist--store type t))
-         (name-store (when store
-                       (gethash name store)))
-         (local-name-store (when local-store
-                             (gethash name local-store)))
-         (output-buffer-name (format "*%s %s*" name type))
+(defun annalist-describe (annalist type &optional view)
+  "Describe information recorded by ANNALIST for TYPE.
+For example: (annalist-describe 'general 'keybindings) If VIEW is non-nil, use
+those settings for displaying recorded information instead of the defaults."
+  (let* ((settings (annalist--merge-nested-plists
+                    (annalist--get-view-settings type view)
+                    (annalist--get-tome-settings type)))
+         (tome (annalist--tome type))
+         (local-tome (annalist--tome tome t))
+         (name-store (when tome
+                       (gethash annalist tome)))
+         (local-name-store (when local-tome
+                             (gethash annalist local-tome)))
+         (output-buffer-name (format "*%s %s*" annalist type))
          (annalist--fn-counter 1))
     ;; NOTE `with-output-to-temp-buffer' does not change the current buffer (so
     ;; it is possible to check active keymaps in a predicate function)
@@ -549,13 +572,13 @@ The previous definition item in NEW-RECORD will updated based on the old
 recorded previous definition (which may not exist), the actual/current
 definition, and the new definition. SETTINGS is used to check for a test
 function for comparing key definitions."
-  (let* ((new-data (car new-record))
-         (new-metadata (cdr new-record))
-         (old-data (car old-record))
-         (old-def (nth 4 old-data))
-         (keymap-sym (nth 0 new-data))
-         (state (nth 1 new-data))
-         (key (nth 2 new-data))
+  (let* ((new-metadata (when (> (plist-get settings :metadata-index)
+                                (length new-record))
+                         (last new-record)))
+         (old-def (nth 4 old-record))
+         (keymap-sym (nth 0 new-record))
+         (state (nth 1 new-record))
+         (key (nth 2 new-record))
          (keymap (or (plist-get new-metadata :keymap)
                      (annalist--get-keymap
                       state
@@ -563,15 +586,13 @@ function for comparing key definitions."
                       (plist-get new-metadata :minor-mode))))
          (current-def (when keymap
                         (annalist--lookup-key keymap key)))
-         (new-def (nth 3 new-data))
-         (items-settings (plist-get settings :items))
-         (def-settings (plist-get settings 3))
-         (test (annalist--test def-settings items-settings)))
+         (new-def (nth 3 new-record))
+         (test (annalist--test settings 'definition)))
     ;; keybinding may still be deferred
     (when current-def
-      (setf (nth 4 new-data)
+      (setf (nth 4 new-record)
             (annalist--previous-value old-def current-def new-def test)))
-    (cons new-data new-metadata)))
+    new-record))
 
 (defun annalist--valid-keymap-p (keymap-sym)
   "Return whether KEYMAP-SYM is bound.
@@ -600,19 +621,23 @@ actually defined (e.g. keybindings may be deferred until the keymap exists).
   "Return whether STATE is valid `evil-local-mode' is on."
   (and (annalist--valid-state-p state) evil-local-mode))
 
-(annalist-define-type 'keybindings
-  :key-index 2
-  :table-start-index 2
-  :record-update #'annalist--update-keybinding
-  :items
-  (list 0 (list :title "Keymap" :format #'annalist-code
-                :predicate #'annalist--valid-keymap-p)
-        1 (list :title "State" :format #'annalist-capitalize
-                :predicate #'annalist--valid-state-p)
-        2 (list :title "Key" :format (annalist-compose #'annalist-verbatim
-                                                       #'key-description))
-        3 (list :title "Definition" :format #'annalist-code)
-        4 (list :title "Previous" :format #'annalist-code)
+(annalist-define-tome 'keybindings
+  (list :primary-key '(keymap state key)
+        :table-start-index 2
+        :record-update #'annalist--update-keybinding
+        'keymap
+        'state
+        'key
+        'definition
+        'previous-definition))
+
+(annalist-define-view 'keybindings 'default
+  (list (list 'keymap :format #'annalist-code)
+        (list 'state :format #'annalist-capitalize)
+        (list 'key :format (annalist-compose #'annalist-verbatim
+                                             #'key-description))
+        (list 'definition :format #'annalist-code)
+        (list 'previous-definition :title "Previous" :format #'annalist-code)
         :extractp #'listp
         :src-block-p #'listp))
 
