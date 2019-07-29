@@ -47,7 +47,8 @@ The settings plist past to the =:record-update= function contains all informatio
 #+begin_src emacs-lisp
 '(:table-start-index 2
   :primary-key (keymap state key)
-  ;; :key-indices and :metadata-index are generated for convenience
+  ;; the following keywords are generated for convenience
+  :type keybindings
   :key-indices (2 1 0)
   :final-index 4
   :metadata-index 5
@@ -118,6 +119,17 @@ Formatting:
                   'global-map nil (kbd "C-+") #'text-scale-increase nil
                   ;; metadata can be specified after final item
                   (list :zoom-related-binding t)))
+
+;; alternatively, record using plist instead of ordered list
+(annalist-record 'me 'keybindings
+                 (list
+                  'keymap 'global-map
+                  'state nil
+                  'key (kbd "C-+")
+                  'definition #'text-scale-increase
+                  ;; metadata can be specified with `t' key
+                  t (list :zoom-related-binding t))
+                 :plist t)
 #+end_src
 
 Some items can potentially be recorded as nil. In the previous example, the evil =state= is recorded as nil (which will always be the case for non-evil users). When a heading item is nil, the heading at that level will just be skipped/not printed.
@@ -139,3 +151,6 @@ It is possible to have custom filtering/sorting behavior by using a custom view:
 
 (annalist-describe 'my 'keybindings 'active-keybindings-only)
 #+end_src
+** Helper Functions
+*** List Helpers
+~annalist-plistify-record~ can be used to convert a record that is an ordered list to a plist. ~annalist-listify-record~ can be used to do the opposite. This is what the =:plist= argument for ~annalist-record~ uses internally. These functions can be useful, for example, inside a =:record-update= function, so that you can get record items by their name instead of by their index.

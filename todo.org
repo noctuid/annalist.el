@@ -9,7 +9,8 @@ CLOSED: [2019-07-29 Mon 18:49]
 *** TODO Check if duplicate recording/record deletion still happens
 *** TODO Check that local keybinding recording/displaying works as expected
 ** TODO Add function (that can be added to hook) to multiline src block entries with lispy
-** TODO Add functions to convert between plist and ordered records
+** DONE Add functions to convert between plist and ordered records
+CLOSED: [2019-07-29 Mon 20:01]
 - Add argument to allow recording using plist (with metadata as arg to =t= for example)
 - Mention in readme that could use this function to convert new-record or old-record to a plist; (plist-get 'key new-record) is more readable than (nth <n> new-record)
 

@@ -121,7 +121,7 @@ in the :defaults plist. If :test is in neither plist, return #'equal."
   (or (annalist--item-get settings item :test)
       #'equal))
 
-(defun annalist--plistify-settings (definition-settings)
+(defun annalist--plistify-settings (definition-settings type)
   "Convert DEFINITION-SETTINGS to an internally useable plist.
 DEFINITION-SETTINGS is a list of arguments for `annalist-define-tome'.
 For example:
@@ -132,7 +132,8 @@ For example:
   definition)
 
 would become (ignoring order):
-'(:test my-equal
+'(:type TYPE
+  :test my-equal
   :primary-key (keymap key)
   :key-indices (0 1)
   :final-index 2
@@ -167,10 +168,28 @@ would become (ignoring order):
             (when (memq item primary-key)
               (push counter key-indices))
             (cl-incf counter)))))
-    (append (list :key-indices key-indices
+    (append (list :type type
+                  :key-indices key-indices
                   :final-index (1- counter)
                   :metadata-index counter)
             plist)))
+
+(defun annalist-plistify-record (record type)
+  "Convert the ordered RECORD list of TYPE to a plist."
+  (let* ((settings (annalist--get-tome-settings type))
+         (metadata (nth (plist-get settings :metadata-index) record)))
+    (cl-loop for i from 0 to (plist-get settings :final-index)
+             collect (plist-get (plist-get settings i) :name) into plist
+             and collect (nth i record) into plist
+             finally (cl-return (nconc plist (list t metadata))))))
+
+(defun annalist-listify-record (record type)
+  "Convert the RECORD plist of TYPE to an ordered list."
+  (let* ((settings (annalist--get-tome-settings type)))
+    (cl-loop for i from 0 to (plist-get settings :final-index)
+             collect (plist-get record (plist-get (plist-get settings i) :name))
+             into list
+             finally (cl-return (nconc list (list (plist-get record t)))))))
 
 (defun annalist--tome (type &optional local)
   "Return the tome for TYPE and LOCAL, creating it if necessary."
@@ -199,7 +218,7 @@ SETTINGS be a list of items and any settings necessary for recording them."
   (declare (indent 1))
   (setq annalist--tomes-settings
         (plist-put annalist--tomes-settings type
-                   (annalist--plistify-settings settings))))
+                   (annalist--plistify-settings settings type))))
 
 ;; * View Definition
 (defun annalist--get-view-settings (type view)
@@ -216,7 +235,7 @@ SETTINGS be a list of items and any settings necessary for recording them."
 To define the default view SETTINGS, NAME should be 'default. If INHERIT is
 non-nil, inherit SETTINGS from that view."
   (declare (indent 2))
-  (setq settings (annalist--plistify-settings settings))
+  (setq settings (annalist--plistify-settings settings type))
   (when inherit
     (setq settings (annalist--merge-nested-plists
                     settings
@@ -281,7 +300,7 @@ and recurse with an incremented DEPTH."
       store)))
 
 ;;;###autoload
-(cl-defun annalist-record (annalist type record &key local)
+(cl-defun annalist-record (annalist type record &key local plist)
   "In the store for ANNALIST, TYPE, and LOCAL, record RECORD.
 ANNALIST should correspond to the package/user recording this information (e.g.
 'general, 'me, etc.). TYPE is the type of information being recorded (e.g.
@@ -289,10 +308,14 @@ ANNALIST should correspond to the package/user recording this information (e.g.
 buffer. This information together is used to select where RECORD should be
 stored in and later retrieved from with `annalist-describe'. RECORD should be a
 list of items to record and later print as org headings and column entries in a
-single row."
+single row. If PLIST is non-nil, RECORD should be a plist instead of an ordered
+list (e.g. '(keymap org-mode-map key \"C-c a\" ...)). The plist keys should be
+the symbols used for the definition of TYPE."
   (let* ((tome (annalist--tome type local))
          (settings (annalist--get-tome-settings type))
          (store (gethash annalist tome)))
+    (when plist
+      (setq record (annalist-listify-record record type)))
     (puthash annalist
              (annalist--record-headings record store 0 settings)
              tome)))
@@ -572,13 +595,14 @@ The previous definition item in NEW-RECORD will updated based on the old
 recorded previous definition (which may not exist), the actual/current
 definition, and the new definition. SETTINGS is used to check for a test
 function for comparing key definitions."
-  (let* ((new-metadata (when (> (plist-get settings :metadata-index)
-                                (length new-record))
-                         (last new-record)))
-         (old-def (nth 4 old-record))
-         (keymap-sym (nth 0 new-record))
-         (state (nth 1 new-record))
-         (key (nth 2 new-record))
+  (let* ((type (plist-get settings :type))
+         (old-record (annalist-plistify-record old-record type))
+         (new-record (annalist-plistify-record new-record type))
+         (new-metadata (plist-get new-record t))
+         (old-def (plist-get old-record 'definition))
+         (keymap-sym (plist-get new-record 'keymap))
+         (state (plist-get new-record 'state))
+         (key (plist-get new-record 'key))
          (keymap (or (plist-get new-metadata :keymap)
                      (annalist--get-keymap
                       state
@@ -586,13 +610,14 @@ function for comparing key definitions."
                       (plist-get new-metadata :minor-mode))))
          (current-def (when keymap
                         (annalist--lookup-key keymap key)))
-         (new-def (nth 3 new-record))
+         (new-def (plist-get new-record 'definition))
          (test (annalist--test settings 'definition)))
     ;; keybinding may still be deferred
     (when current-def
-      (setf (nth 4 new-record)
-            (annalist--previous-value old-def current-def new-def test)))
-    new-record))
+      (plist-put new-record
+                 'previous-definition
+                 (annalist--previous-value old-def current-def new-def test)))
+    (annalist-listify-record new-record type)))
 
 (defun annalist--valid-keymap-p (keymap-sym)
   "Return whether KEYMAP-SYM is bound.
