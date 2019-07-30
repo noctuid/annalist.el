@@ -313,9 +313,12 @@ list (e.g. '(keymap org-mode-map key \"C-c a\" ...)). The plist keys should be
 the symbols used for the definition of TYPE."
   (let* ((tome (annalist--tome type local))
          (settings (annalist--get-tome-settings type))
+         (preprocess (plist-get settings :preprocess))
          (store (gethash annalist tome)))
     (when plist
       (setq record (annalist-listify-record record type)))
+    (when preprocess
+      (setq record (funcall preprocess record)))
     (puthash annalist
              (annalist--record-headings record store 0 settings)
              tome)))
@@ -526,6 +529,20 @@ descriptive forms as obtained with `key-description'"
   (string< (key-description x) (key-description y)))
 
 ;; * Keybindings Type
+(defun annalist--preprocess-keybinding (record)
+  "Preprocess RECORD by normalizing the keymap.
+If the keymap is 'global and the state is non-nil, set the keymap to be the
+actual evil global keymap (e.g. 'evil-normal-state-map)."
+  (let* ((record (annalist-plistify-record record 'keybindings))
+         (keymap (plist-get record 'keymap))
+         (state (plist-get record 'state)))
+    (when (and state (eq keymap 'global))
+      (plist-put record 'state nil)
+      (plist-put record
+                 'keymap
+                 (evil-state-property state :keymap)))
+    (annalist-listify-record record 'keybindings)))
+
 (declare-function evil-state-property "evil-common")
 (declare-function evil-get-minor-mode-keymap "evil-core")
 (declare-function evil-get-auxiliary-keymap "evil-core")
@@ -649,6 +666,7 @@ actually defined (e.g. keybindings may be deferred until the keymap exists).
 (annalist-define-tome 'keybindings
   (list :primary-key '(keymap state key)
         :table-start-index 2
+        :preprocess #'annalist--preprocess-keybinding
         :record-update #'annalist--update-keybinding
         'keymap
         'state

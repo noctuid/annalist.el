@@ -35,6 +35,7 @@ These settings apply to the entirety of the recorded information.
 - =:table-start-index= - the index of the first item to be printed in an org table; previous items are printed as headings (default: none)
 - =:primary-key= - the item or list of items that uniquely identifies the record; used with the  =:test= values for those items to check for an old record that should be replaced/updated (default: none)
 - =:record-update= - a function used to update a record before recording it; this can be used to, for example, set the value of an item to store the previous value of another item; the function is called with =old-record= (nil if none), =new-record=, and =settings=; see ~annalist--update-keybindings~ for an example of how to create such a function (default: none)
+- =:preprocess= - a function used to alter a record before doing anything with it; it is passed the record and should return the altered record; see the default keybindings type for an example (default: none)
 - =:defaults= - a plist of default item settings; see below for valid item settings (default: none)
 
 *** Item Settings
@@ -59,7 +60,7 @@ The settings plist past to the =:record-update= function contains all informatio
 #+end_src
 
 ** Defining Views
-Views contain settings for formatting and displaying recorded information. Settings from the type definition cannot be changed later. On the other hand, views are for all settings that a user may want to change. They are defined using the same format as tome types:
+Views contain settings for formatting and displaying recorded information. Settings from the type definition cannot be changed later. On the other hand, views are for all settings that a user may want to change for a particular ~annalist-describe~ call. They are defined using the same format as tome types:
 #+begin_src emacs-lisp
 (annalist-define-view 'battles 'default
   '(:defaults (:format capitalize)

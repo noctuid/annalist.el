@@ -14,7 +14,8 @@ CLOSED: [2019-07-29 Mon 20:01]
 - Add argument to allow recording using plist (with metadata as arg to =t= for example)
 - Mention in readme that could use this function to convert new-record or old-record to a plist; (plist-get 'key new-record) is more readable than (nth <n> new-record)
 
-** TODO Allow preprocessing
+** DONE Allow preprocessing
+CLOSED: [2019-07-29 Mon 20:34]
 For example, to handle ='normal 'global= and =='evil-normal-state-map nil= (which are actually the same)
 
 also
