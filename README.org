@@ -70,7 +70,7 @@ Views contain settings for formatting and displaying recorded information. Setti
     ...))
 #+end_src
 
-The =default= view is what ~annalist-describe~ will use if no view name is explicitly specified.
+The =default= view is what ~annalist-describe~ will use if no view name is explicitly specified. To prevent naming conflicts, external packages that create views should prefix the views with their symbol (e.g. =general-alternate-view=).
 
 *** Top-level Settings
 These settings apply to the entirety of the recorded information.
@@ -82,10 +82,10 @@ These settings apply to the entirety of the recorded information.
 There is also a special =:inherit= keyword that can be used to create a new type of tome that is based on another type:
 #+begin_src emacs-lisp
 (annalist-define-view 'keybindings 'alternate
-  :inherit 'keybindings
   ;; override title for key column
   '((key :title "Keybinding")
-    ...))
+    ...)
+  :inherit 'keybindings)
 #+end_src
 
 *** Item Settings
