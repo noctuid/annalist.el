@@ -121,7 +121,7 @@ in the :defaults plist. If :test is in neither plist, return #'equal."
   (or (annalist--item-get settings item :test)
       #'equal))
 
-(defun annalist--plistify-settings (definition-settings type)
+(defun annalist--plistify-settings (definition-settings type &optional no-extras)
   "Convert DEFINITION-SETTINGS to an internally useable plist.
 DEFINITION-SETTINGS is a list of arguments for `annalist-define-tome'.
 For example:
@@ -143,7 +143,10 @@ would become (ignoring order):
   2 (:name definition)
   keymap (:name keymap)
   key (:name key)
-  definition (:name definition))"
+  definition (:name definition))
+
+If NO-EXTRAS is non-nil, exclude the extra generated information (e.g.
+:final-index)."
   (let ((counter 0)
         primary-key
         key-indices
@@ -168,11 +171,13 @@ would become (ignoring order):
             (when (memq item primary-key)
               (push counter key-indices))
             (cl-incf counter)))))
-    (append (list :type type
-                  :key-indices key-indices
-                  :final-index (1- counter)
-                  :metadata-index counter)
-            plist)))
+    (if no-extras
+        plist
+      (append (list :type type
+                    :key-indices key-indices
+                    :final-index (1- counter)
+                    :metadata-index counter)
+              plist))))
 
 (defun annalist-plistify-record (record type)
   "Convert the ordered RECORD list of TYPE to a plist."
@@ -235,7 +240,9 @@ SETTINGS be a list of items and any settings necessary for recording them."
 To define the default view SETTINGS, NAME should be 'default. If INHERIT is
 non-nil, inherit SETTINGS from that view."
   (declare (indent 2))
-  (setq settings (annalist--plistify-settings settings type))
+  ;; exclude extra settings because may not have specified every item and don't
+  ;; want to change :final-index
+  (setq settings (annalist--plistify-settings settings type t))
   (when inherit
     (setq settings (annalist--merge-nested-plists
                     settings
