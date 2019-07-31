@@ -382,7 +382,9 @@ the symbols used for the definition of TYPE."
                 (too-long (and max-width
                                (> (length (format "%s" item))
                                   max-width))))
-           (princ "|")
+           ;; space ensures that a negative number, for example, doesn't expand
+           ;; into a |---+---+---| line later
+           (princ "| ")
            (cond ((and too-long
                        extractp
                        (funcall extractp item))
