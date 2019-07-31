@@ -357,7 +357,7 @@ the symbols used for the definition of TYPE."
   "Print an org table for RECORDS using SETTINGS."
   ;; printed oldest to newest
   ;; TODO could add option to do newest to oldest instead
-  (setq records (nreverse records))
+  (setq records (reverse records))
   (let* ((predicate (plist-get settings :predicate))
          (sorter (plist-get settings :sort))
          (sorted-records (if sorter
