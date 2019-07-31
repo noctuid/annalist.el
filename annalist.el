@@ -398,8 +398,8 @@ the symbols used for the definition of TYPE."
                     (setq item (format (format "%%.%ss" max-width) item)))
                   (when formatter
                     (setq item (funcall formatter item)))
-                  (princ (annalist--safe-pipe (format "%s" item))))))))
-      (princ "|\n"))
+                  (princ (annalist--safe-pipe (format "%s" item)))))))
+        (princ "|\n")))
     (princ "\n")
     ;; print footnotes
     (dolist (footnote footnotes)
