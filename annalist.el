@@ -121,7 +121,7 @@ in the :defaults plist. If :test is in neither plist, return #'equal."
   (or (annalist--item-get settings item :test)
       #'equal))
 
-(defun annalist--plistify-settings (definition-settings type &optional no-extras)
+(defun annalist--plistify-settings (definition-settings type &optional view)
   "Convert DEFINITION-SETTINGS to an internally useable plist.
 DEFINITION-SETTINGS is a list of arguments for `annalist-define-tome'.
 For example:
@@ -138,16 +138,19 @@ would become (ignoring order):
   :key-indices (0 1)
   :final-index 2
   :metadata-index 3
-  0 (:name keymap)
-  1 (:name key)
-  2 (:name definition)
-  keymap (:name keymap)
-  key (:name key)
-  definition (:name definition))
+  0 (:name keymap :index 0)
+  1 (:name key :index 1)
+  2 (:name definition :index 2)
+  keymap (:name keymap :index 0)
+  key (:name key :index 1)
+  definition (:name definition index 2))
 
-If NO-EXTRAS is non-nil, exclude the extra generated information (e.g.
-:final-index)."
+If VIEW is non-nil, exclude the extra generated information (e.g. :final-index).
+Also allow not specifying all items. Indices are determined by checking the
+stored settings for TYPE."
   (let ((counter 0)
+        (tome-settings (when view
+                         (annalist--get-tome-settings type)))
         primary-key
         key-indices
         plist)
@@ -163,15 +166,20 @@ If NO-EXTRAS is non-nil, exclude the extra generated information (e.g.
           (let* ((item (if (listp entry)
                            (car entry)
                          entry))
-                 (item-definition-settings (append (list :name item)
+                 (index (if view
+                            (plist-get (plist-get tome-settings item)
+                                       :index)
+                          counter))
+                 (item-definition-settings (append (list :name item
+                                                         :index index)
                                                    (and (listp entry)
                                                         (cdr entry)))))
             (setq plist (plist-put plist item item-definition-settings))
-            (setq plist (plist-put plist counter item-definition-settings))
+            (setq plist (plist-put plist index item-definition-settings))
             (when (memq item primary-key)
               (push counter key-indices))
             (cl-incf counter)))))
-    (if no-extras
+    (if view
         plist
       (append (list :type type
                     :key-indices key-indices

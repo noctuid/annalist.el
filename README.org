@@ -48,8 +48,8 @@ The settings plist past to the =:record-update= function contains all informatio
   :final-index 4
   :metadata-index 5
   ;; item settings can be accessed by their symbol or their index
-  keymap (:name keymap :format annalist-code)
-  0 (:name keymap :format annalist-code)
+  keymap (:name keymap :index 0 :format annalist-code)
+  0 (:name keymap :index 0 :format annalist-code)
   ...)
 #+end_src
 
