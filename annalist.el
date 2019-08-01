@@ -398,11 +398,13 @@ the symbols used for the definition of TYPE."
                        (funcall extractp item))
                   (princ (format "[fn:%s]" annalist--fn-counter))
                   (push (list annalist--fn-counter item formatter
-                              (funcall src-block-p item))
+                              (and src-block-p
+                                   (funcall src-block-p item)))
                         footnotes)
                   (cl-incf annalist--fn-counter))
                  (t
                   (when too-long
+                    ;; TODO ellipsis messes up org alignment?
                     (setq item (format (format "%%.%ss" max-width) item)))
                   (when formatter
                     (setq item (funcall formatter item)))
