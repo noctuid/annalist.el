@@ -547,6 +547,33 @@ Both are considered to be keys in their bindable forms. Compare their
 descriptive forms as obtained with `key-description'"
   (string< (key-description x) (key-description y)))
 
+;; ** Source Block Formatting
+(defun annalist-multiline-source-blocks ()
+  "Format Emacs Lisp source blocks in current buffer using lispy.
+When lispy is installed, use `lispy-multiline' to format the elisp source blocks
+in the current buffer. This is useful since annalist will extract items to
+source blocks as a single line."
+  (when (require 'lispy nil t)
+    (save-excursion
+      (goto-char (point-min))
+      (while (ignore-errors
+               (org-babel-next-src-block))
+        (forward-line)
+        (cl-destructuring-bind (language content &rest _)
+            (org-babel-get-src-block-info)
+          (when (string= language "emacs-lisp")
+            (delete-region (line-beginning-position) (line-end-position))
+            (with-temp-buffer
+              (save-excursion
+                (insert content))
+              (emacs-lisp-mode)
+              (while (ignore-errors
+                       (lispy-multiline)
+                       (forward-list)
+                       (not (eobp))))
+              (setq content (buffer-string)))
+            (insert content)))))))
+
 ;; * Keybindings Type
 (defun annalist--preprocess-keybinding (record)
   "Preprocess RECORD by normalizing the keymap.
