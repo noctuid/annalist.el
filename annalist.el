@@ -64,6 +64,14 @@ The buffer is editable when this hook is run."
   "Stores possible views for defined tomes.")
 
 ;; * List Helpers
+(defun annalist--make-list (item)
+  "If ITEM is a list, return it; otherwise return (list ITEM).
+If ITEM is a lambda, it will not be considered to be a list."
+  (if (and (listp item)
+           (not (functionp item)))
+      item
+    (list item)))
+
 (defun annalist--merge-lists (a b &optional test)
   "Return the result of merging the lists A in B.
 Merging is done by adding items in B that are not in A (as tested by TEST) to
@@ -482,6 +490,7 @@ those settings for displaying recorded information instead of the defaults."
          (local-name-store (when local-tome
                              (gethash annalist local-tome)))
          (output-buffer-name (format "*%s %s*" annalist type))
+         (view-hooks (annalist--make-list (plist-get settings :hooks)))
          (annalist--fn-counter 1))
     ;; NOTE `with-output-to-temp-buffer' does not change the current buffer (so
     ;; it is possible to check active keymaps in a predicate function)
@@ -508,6 +517,8 @@ those settings for displaying recorded information instead of the defaults."
                  (org-table-align)
                  (outline-next-heading)))
         (goto-char (point-min))
+        (dolist (view-hook view-hooks)
+          (funcall view-hook))
         (run-hooks 'annalist-describe-hook)
         (read-only-mode)))))
 
@@ -553,24 +564,23 @@ descriptive forms as obtained with `key-description'"
 When lispy is installed, use `lispy-multiline' to format the elisp source blocks
 in the current buffer. This is useful since annalist will extract items to
 source blocks as a single line."
-  (when (require 'lispy nil t)
-    (save-excursion
-      (goto-char (point-min))
-      (while (ignore-errors
-               (org-babel-next-src-block))
-        (forward-line)
-        (cl-destructuring-bind (language content &rest _)
-            (org-babel-get-src-block-info)
-          (when (string= language "emacs-lisp")
-            (delete-region (line-beginning-position) (line-end-position))
+  (when (and (require 'lispy nil t) (require 'ob-core nil t))
+    (let (content
+          ;; silence warnings
+          lang beg-body end-body body)
+      (save-excursion
+        (org-babel-map-src-blocks nil
+          (when (string= lang "emacs-lisp")
+            (goto-char beg-body)
+            (delete-region beg-body end-body)
             (with-temp-buffer
               (save-excursion
-                (insert content))
+                (insert body))
               (emacs-lisp-mode)
-              (while (ignore-errors
-                       (lispy-multiline)
-                       (forward-list)
-                       (not (eobp))))
+              (while (progn (ignore-errors
+                              (lispy-multiline))
+                            (forward-list)
+                            (not (eobp))))
               (setq content (buffer-string)))
             (insert content)))))))
 
@@ -728,7 +738,8 @@ actually defined (e.g. keybindings may be deferred until the keymap exists).
         (list 'definition :format #'annalist-code)
         (list 'previous-definition :title "Previous" :format #'annalist-code)
         :extractp #'listp
-        :src-block-p #'listp))
+        :src-block-p #'listp
+        :hooks #'annalist-multiline-source-blocks))
 
 ;; * Settings Type
 ;; TODO

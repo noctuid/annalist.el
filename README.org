@@ -73,6 +73,7 @@ These settings apply to the entirety of the recorded information.
 
 - =:predicate= - a function that is passed the entire record and returns non-nil if the record should be printed (default: none)
 - =:sort= - a function used to sort records in each printed table; the function is passed two records and and should return non-nil if the first record should come first (default: none; tables are printed in recorded order)
+- =:hooks= - a function or a list of functions to run in the describe buffer after printing all headings and tables before making the buffer readonly; these run before =annalist-describe-hook= (default: none)
 - =:defaults= - a plist of default item settings; see below for valid item settings (default: none)
 
 There is also a special =:inherit= keyword that can be used to create a new type of tome that is based on another type:
@@ -151,3 +152,6 @@ It is possible to have custom filtering/sorting behavior by using a custom view:
 ** Helper Functions
 *** List Helpers
 ~annalist-plistify-record~ can be used to convert a record that is an ordered list to a plist. ~annalist-listify-record~ can be used to do the opposite. This is what the =:plist= argument for ~annalist-record~ uses internally. These functions can be useful, for example, inside a =:record-update= function, so that you can get record items by their name instead of by their index.
+
+*** Formatting Helpers
+By default, Emacs Lisp extracted into source blocks will just be one long line. You can add ~annalist-multiline-source-blocks~ to a view's =:hooks= keyword or to =annalist-describe-hook= to autoformat org source blocks with ~lispy-multiline~ (if lispy is installed). This is the default behavior for the builtin types.

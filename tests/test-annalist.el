@@ -22,6 +22,9 @@
 ;; * Setup
 (require 'buttercup)
 (require 'annalist)
+(require 'org-element)
+
+(add-hook 'emacs-lisp-mode-hook (lambda () (setq indent-tabs-mode nil)))
 
 ;; * Helpers
 (defun annalist-describe-expect (annalist type &optional result)
@@ -74,10 +77,71 @@ non-nil, the specified settings will be used for the default view."
     (annalist-define-view 'annalist-test 'default
       view)))
 
-
 ;; * Annalist Helpers
 ;; TODO plistify-settings, plistify, listify
 ;; TODO sorting and formatting helpers
+
+(describe "annalist-multiline-source-blocks"
+  (it "should format all emacs lisp source blocks with `lispy-multiline'"
+    (with-temp-buffer
+      (insert "* Test heading
+#+begin_src emacs-lisp
+;; these are some lambdas
+(lambda () (lambda () (lambda () (lambda () (lambda () (lambda () (lambda ())))))))
+(lambda () (lambda () (lambda () (lambda () (lambda () (lambda () (lambda ())))))))
+(lambda () (lambda () (lambda () (lambda () (lambda () (lambda () (lambda ())))))))
+#+end_src
+
+* Test Heading 2
+#+begin_src python
+;; don't touch this, it's not elisp (well...)
+(lambda () (lambda () (lambda () (lambda () (lambda () (lambda () (lambda ())))))))
+#+end_src
+
+#+begin_src emacs-lisp
+(annalist-define-view 'keybindings 'my-view '(:defaults (:format #'capitalize) (key :format #'annalist-verbatim) (definition :format nil)))
+#+end_src
+")
+      (annalist-multiline-source-blocks)
+      (expect (buffer-string)
+              :to-equal "* Test heading
+#+begin_src emacs-lisp
+;; these are some lambdas
+(lambda ()
+  (lambda ()
+    (lambda ()
+      (lambda ()
+        (lambda ()
+          (lambda ()
+            (lambda ())))))))
+(lambda ()
+  (lambda ()
+    (lambda ()
+      (lambda ()
+        (lambda ()
+          (lambda ()
+            (lambda ())))))))
+(lambda ()
+  (lambda ()
+    (lambda ()
+      (lambda ()
+        (lambda ()
+          (lambda ()
+            (lambda ())))))))
+#+end_src
+
+* Test Heading 2
+#+begin_src python
+;; don't touch this, it's not elisp (well...)
+(lambda () (lambda () (lambda () (lambda () (lambda () (lambda () (lambda ())))))))
+#+end_src
+
+#+begin_src emacs-lisp
+(annalist-define-view 'keybindings 'my-view '(:defaults (:format #'capitalize)
+                                                        (key :format #'annalist-verbatim)
+                                                        (definition :format nil)))
+#+end_src
+"))))
 
 ;; * Definition Keywords
 (describe "The :table-start-index keyword"
@@ -251,6 +315,40 @@ It concatenates the locations from OLD-RECORD and NEW-RECORD."
 |   470 | Tenth return of the Great Comet                   | Outer Space        |
 |   470 | The Lady and the Ten Who Were Taken are unearthed | Northern Continent |
 |   559 | The Siege of Dejagore begins                      | Southern Continent |
+")))
+
+(describe "The top-level :hooks keyword"
+  (it "should run functions after printing the headings/tables and aligning them"
+    (annalist-test-tome-setup
+     :view '(:hooks (list (lambda ()
+                            (goto-char (point-max))
+                            (insert "Water sleeps\n")))))
+    (annalist-describe-expect 'annalist 'annalist-test
+      "
+|  Year | Event                                             | Location           |
+|-------+---------------------------------------------------+--------------------|
+|   559 | The Siege of Dejagore begins                      | Southern Continent |
+| -1442 | Temple of Traveller's Repose is founded           | Southern Continent |
+|     0 | Beginning of the Domination                       | Northern Continent |
+|   470 | Tenth return of the Great Comet                   | Outer Space        |
+|   470 | The Lady and the Ten Who Were Taken are unearthed | Northern Continent |
+Water sleeps
+"))
+  (it "should also support a single item (including a lambda)"
+    (annalist-test-tome-setup
+     :view '(:hooks (lambda ()
+                      (goto-char (point-max))
+                      (insert "My brother unforgiven\n"))))
+    (annalist-describe-expect 'annalist 'annalist-test
+      "
+|  Year | Event                                             | Location           |
+|-------+---------------------------------------------------+--------------------|
+|   559 | The Siege of Dejagore begins                      | Southern Continent |
+| -1442 | Temple of Traveller's Repose is founded           | Southern Continent |
+|     0 | Beginning of the Domination                       | Northern Continent |
+|   470 | Tenth return of the Great Comet                   | Outer Space        |
+|   470 | The Lady and the Ten Who Were Taken are unearthed | Northern Continent |
+My brother unforgiven
 ")))
 
 ;; ** Item Keywords
