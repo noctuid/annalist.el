@@ -6,7 +6,7 @@ cask:
 
 test:
 	@echo "Using $(shell which $(emacs))..."
-	EMACS=$(EMACS) cask exec buttercup -L .
+	EMACS=$(emacs) cask exec buttercup -L .
 
 clean:
 	rm -f *.elc
