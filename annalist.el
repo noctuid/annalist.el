@@ -29,7 +29,6 @@
 
 ;;; Code:
 (require 'cl-lib)
-(eval-when-compile (require 'subr-x))
 
 (defgroup annalist nil
   "Record and display information such as keybindings."
@@ -75,8 +74,15 @@ If ITEM is a lambda, it will not be considered to be a list."
 (defun annalist--merge-lists (a b &optional test)
   "Return the result of merging the lists A in B.
 Merging is done by adding items in B that are not in A (as tested by TEST) to
-the end of A."
-  (append a (cl-set-difference b a :test (or test #'equal))))
+the end of A. The order of both lists is preserved."
+  (append a
+          (cl-loop for b-item in b
+                   when (not (if test
+                                 (cl-some (lambda (a-item)
+                                            (funcall test a-item b-item))
+                                          a)
+                               (member b-item a)))
+                   collect b-item)))
 
 (defun annalist--merge-plists (a b)
   "Return the result of merging the plists A and B.
@@ -436,6 +442,14 @@ the symbols used for the definition of TYPE."
                                        item)))))
         (princ "\n")))))
 
+(defsubst annalist--hash-table-keys (hash-table)
+  "Return a list of keys in HASH-TABLE.
+The default `hash-table-keys' makes no guarantee about the order of the keys,
+and the behavior differs between Emacs versions. This function returns the keys
+in the order of usage (least recent to most recent) at least for Emacs 24.4 up
+to Emacs 27."
+  (cl-loop for k being the hash-keys of hash-table collect k))
+
 (defun annalist--print-headings (store depth settings &optional
                                        increase-print-depth)
   "Print information from STORE as `org-mode' headings.
@@ -447,7 +461,7 @@ one."
       (annalist--print-table store settings)
     (let* ((formatter (annalist--item-get settings depth :format))
            (priority-keys (annalist--item-get settings depth :prioritize))
-           (keys (hash-table-keys store))
+           (keys (annalist--hash-table-keys store))
            (sorter (annalist--item-get settings depth :sort))
            (sorted-keys (annalist--merge-lists priority-keys
                                                (if sorter
