@@ -1,8 +1,8 @@
 emacs ?= emacs
 
 cask:
-	$(shell EMACS=$(emacs) cask --verbose --debug)
-	$(shell EMACS=$(emacs) cask update --verbose --debug)
+	EMACS=$(emacs) cask --verbose --debug
+	EMACS=$(emacs) cask update --verbose --debug
 
 test:
 	@echo "Using $(shell which $(emacs))..."
