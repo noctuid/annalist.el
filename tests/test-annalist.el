@@ -20,6 +20,11 @@
 
 ;;; Code:
 ;; * Setup
+;; (when (require 'undercover nil t)
+;;   (undercover "*.el"
+;;               (:exclude "test-*.el")
+;;               (:report-type :codecov)
+;;               (:send-report nil)))
 (require 'buttercup)
 (require 'annalist)
 (require 'org-element)

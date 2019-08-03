@@ -23,5 +23,8 @@ install:
 script:
   - emacs --version
   - make test
+# after_success:
+#   # Upload coverage
+#   - bash <(curl -s https://codecov.io/bash)
 notifications:
   email: false
