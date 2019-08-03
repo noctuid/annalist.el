@@ -149,6 +149,9 @@ It is possible to have custom filtering/sorting behavior by using a custom view:
 
 (annalist-describe 'my 'keybindings 'active-keybindings-only)
 #+end_src
+
+=annalist-org-startup-folded= will determine what =org-startup-folded= setting to use (defaults to nil; all headings will be unfolded).
+
 ** Helper Functions
 *** List Helpers
 ~annalist-plistify-record~ can be used to convert a record that is an ordered list to a plist. ~annalist-listify-record~ can be used to do the opposite. This is what the =:plist= argument for ~annalist-record~ uses internally. These functions can be useful, for example, inside a =:record-update= function, so that you can get record items by their name instead of by their index.

@@ -40,6 +40,14 @@
 The buffer is editable when this hook is run."
   :type 'hook)
 
+(defcustom annalist-org-startup-folded nil
+  "The setting of `org-startup-folded' to use in `annalist-describe'."
+  :type '(choice
+          (const :tag "nofold: show all" nil)
+          (const :tag "fold: overview" t)
+          (const :tag "content: all headlines" content)
+          (const :tag "show everything, even drawers" showeverything)))
+
 (defcustom annalist-multiline-function #'lispy-alt-multiline
   "Used in `annalist-multiline-source-blocks' to format top level forms.
 The default is `lispy-alt-multiline' which results in shorter line lengths.
@@ -525,7 +533,7 @@ those settings for displaying recorded information instead of the defaults."
         (annalist--print-headings name-store 0 settings local-name-store)))
     (when (or local-name-store name-store)
       (with-current-buffer output-buffer-name
-        (let ((org-startup-folded 'showall))
+        (let ((org-startup-folded annalist-org-startup-folded))
           (org-mode))
         (read-only-mode -1)
         ;; TODO delete empty tables then headings (e.g. if predicate for row
