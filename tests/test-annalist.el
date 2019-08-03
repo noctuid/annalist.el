@@ -88,8 +88,9 @@ non-nil, the specified settings will be used for the default view."
 
 (describe "annalist-multiline-source-blocks"
   (it "should format all emacs lisp source blocks with `lispy-multiline'"
-    (with-temp-buffer
-      (insert "* Test heading
+    (expect
+     (with-temp-buffer
+       (insert "* Test heading
 #+begin_src emacs-lisp
 ;; these are some lambdas
 (lambda () (lambda () (lambda () (lambda () (lambda () (lambda () (lambda ())))))))
@@ -107,9 +108,9 @@ non-nil, the specified settings will be used for the default view."
 (annalist-define-view 'keybindings 'my-view '(:defaults (:format #'capitalize) (key :format #'annalist-verbatim) (definition :format nil)))
 #+end_src
 ")
-      (annalist-multiline-source-blocks)
-      (expect (buffer-string)
-              :to-equal "* Test heading
+       (annalist-multiline-source-blocks)
+       (buffer-string))
+     :to-equal "* Test heading
 #+begin_src emacs-lisp
 ;; these are some lambdas
 (lambda ()
@@ -117,22 +118,19 @@ non-nil, the specified settings will be used for the default view."
     (lambda ()
       (lambda ()
         (lambda ()
-          (lambda ()
-            (lambda ())))))))
+          (lambda () (lambda ())))))))
 (lambda ()
   (lambda ()
     (lambda ()
       (lambda ()
         (lambda ()
-          (lambda ()
-            (lambda ())))))))
+          (lambda () (lambda ())))))))
 (lambda ()
   (lambda ()
     (lambda ()
       (lambda ()
         (lambda ()
-          (lambda ()
-            (lambda ())))))))
+          (lambda () (lambda ())))))))
 #+end_src
 
 * Test Heading 2
@@ -142,11 +140,15 @@ non-nil, the specified settings will be used for the default view."
 #+end_src
 
 #+begin_src emacs-lisp
-(annalist-define-view 'keybindings 'my-view '(:defaults (:format #'capitalize)
-                                                        (key :format #'annalist-verbatim)
-                                                        (definition :format nil)))
+(annalist-define-view
+    'keybindings
+    'my-view
+  '(:defaults (:format #'capitalize)
+              (key
+               :format #'annalist-verbatim)
+              (definition :format nil)))
 #+end_src
-"))))
+")))
 
 ;; * Definition Keywords
 (describe "The :table-start-index keyword"

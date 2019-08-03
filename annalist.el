@@ -40,6 +40,12 @@
 The buffer is editable when this hook is run."
   :type 'hook)
 
+(defcustom annalist-multiline-function #'lispy-alt-multiline
+  "Used in `annalist-multiline-source-blocks' to format top level forms.
+The default is `lispy-alt-multiline' which results in shorter line lengths.
+`lispy-multiline' is another alternative."
+  :type 'function)
+
 ;; (defcustom annalist-storage-type 'builtin
 ;;   "The method for storage.
 ;; The builtin method uses builtin data structures for storing information but does
@@ -592,7 +598,7 @@ source blocks as a single line."
                 (insert body))
               (emacs-lisp-mode)
               (while (progn (ignore-errors
-                              (lispy-multiline))
+                              (funcall annalist-multiline-function))
                             (forward-list)
                             (not (eobp))))
               (setq content (buffer-string)))
