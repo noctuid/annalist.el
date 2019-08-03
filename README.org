@@ -1,7 +1,29 @@
+# NOTE: If you are viewing this in org-mode, it is recommended that you install and enable [[https://github.com/snosov1/toc-org][toc-org]], so that all internal links open correctly.
+
 [[https://travis-ci.org/noctuid/annalist.el][https://travis-ci.org/noctuid/annalist.el.svg?branch=master]]
 
 * About
 =annalist.el= is a library that can be used to record information and later print that information using =org-mode= headings and tables. It allows defining different types of things that can be recorded (e.g. keybindings, settings, hooks, and advice) and supports custom filtering, sorting, and formatting. =annalist= is primarily intended for use in other packages like =general= and =evil-collection=, but it can also be used directly in a user's configuration.
+
+* Table of Contents :noexport:TOC:
+- [[#about][About]]
+- [[#usage][Usage]]
+  - [[#terminology][Terminology]]
+  - [[#settings][Settings]]
+  - [[#defining-new-types][Defining New Types]]
+    - [[#top-level-settings][Top-level Settings]]
+    - [[#update-record-settings-argument][=:update-record= Settings Argument]]
+  - [[#defining-views][Defining Views]]
+    - [[#top-level-settings-1][Top-level Settings]]
+    - [[#item-settings][Item Settings]]
+  - [[#recording][Recording]]
+  - [[#describing][Describing]]
+  - [[#helper-functions][Helper Functions]]
+    - [[#list-helpers][List Helpers]]
+    - [[#formatting-helpers][Formatting Helpers]]
+      - [[#format-helpers][=:format= Helpers]]
+      - [[#formatting-emacs-lisp-source-blocks][Formatting Emacs Lisp Source Blocks]]
+    - [[#sorting-helpers][Sorting Helpers]]
 
 * Usage
 ** Terminology
@@ -167,3 +189,8 @@ The builtin types have ~annlist-multiline-source-blocks~ in their =:hooks= setti
 
 *** Sorting Helpers
 Annalist provides ~annalist-string-<~ and ~annalist-key-<~ (e.g. ~(kbd "C-c a")~ vs ~(kbd "C-c b")~).
+
+# increase max depth
+# Local Variables:
+# toc-org-max-depth: 4
+# End:
