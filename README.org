@@ -157,6 +157,13 @@ It is possible to have custom filtering/sorting behavior by using a custom view:
 ~annalist-plistify-record~ can be used to convert a record that is an ordered list to a plist. ~annalist-listify-record~ can be used to do the opposite. This is what the =:plist= argument for ~annalist-record~ uses internally. These functions can be useful, for example, inside a =:record-update= function, so that you can get record items by their name instead of by their index.
 
 *** Formatting Helpers
+**** =:format= Helpers
+Annalist provides ~annalist-verbatim~ (e.g. \=verbatim text\=), ~annalist-code~ (e.g. \~my-function\~), and ~annalist-capitalize~. There is also an ~annalist-compose~ helper for combining different formatting functions.
+
+**** Formatting Emacs Lisp Source Blocks
 By default, Emacs Lisp extracted into source blocks will just be one long line. You can add ~annalist-multiline-source-blocks~ to a view's =:hooks= keyword or to =annalist-describe-hook= to autoformat org source blocks if lispy is installed. By default, it uses ~lispy-alt-multiline~. To use ~lispy-multiline~ instead, customize ~annalist-multiline-function~.
 
 The builtin types have ~annlist-multiline-source-blocks~ in their =:hooks= setting by default.
+
+*** Sorting Helpers
+Annalist provides ~annalist-string-<~ and ~annalist-key-<~ (e.g. ~(kbd "C-c a")~ vs ~(kbd "C-c b")~).
