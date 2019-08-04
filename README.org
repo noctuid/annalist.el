@@ -1,4 +1,11 @@
-# NOTE: If you are viewing this in org-mode, it is recommended that you install and enable [[https://github.com/snosov1/toc-org][toc-org]], so that all internal links open correctly.
+#+TITLE: Annalist User Manual
+#+AUTHOR: Fox Kiester
+#+LANGUAGE: en
+#+TEXINFO_DIR_CATEGORY: Emacs
+#+TEXINFO_DIR_TITLE: Annalist: (annalist).
+#+TEXINFO_DIR_DESC: Record and display information such as keybindings.
+
+# NOTE: if you are viewing this in org-mode, it is recommended that you install and enable [[https://github.com/snosov1/toc-org][toc-org]], so that all internal links open correctly.
 
 [[https://travis-ci.org/noctuid/annalist.el][https://travis-ci.org/noctuid/annalist.el.svg?branch=master]]
 

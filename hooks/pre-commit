@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+if git diff --cached --name-only | grep --quiet README.org; then
+	make texi
+	git add annalist.texi
+fi
