@@ -29,8 +29,6 @@
 (require 'annalist)
 (require 'org-element)
 
-(add-hook 'emacs-lisp-mode-hook (lambda () (setq indent-tabs-mode nil)))
-
 ;; * Helpers
 (defun annalist-describe-expect (annalist type &optional result)
   "Compare the result of running `annalist-describe' with an expected one.
@@ -82,11 +80,19 @@ non-nil, the specified settings will be used for the default view."
     (annalist-define-view 'annalist-test 'default
       view)))
 
+(defun annalist-no-tabs ()
+  "Disable indenting with tabs in the current buffer."
+  (setq indent-tabs-mode nil))
+
 ;; * Annalist Helpers
 ;; TODO plistify-settings, plistify, listify
 ;; TODO sorting and formatting helpers
 
 (describe "annalist-multiline-source-blocks"
+  (before-all
+    (add-hook 'emacs-lisp-mode-hook #'annalist-no-tabs))
+  (after-all
+    (remove-hook 'emacs-lisp-mode-hook #'annalist-no-tabs))
   (it "should format all emacs lisp source blocks with `lispy-multiline'"
     (expect
      (with-temp-buffer
