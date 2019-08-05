@@ -46,12 +46,13 @@ Usage
 Defining New Types
 
 * Top-level Settings::
+* Item Settings::
 * @samp{:update-record} Settings Argument: @samp{update-record} Settings Argument. 
 
 Defining Views
 
 * Top-level Settings: Top-level Settings (1). 
-* Item Settings::
+* Item Settings: Item Settings (1). 
 
 Helper Functions
 
@@ -121,6 +122,7 @@ At minimum, a type definition must include @samp{:primary-key}, @samp{:table-sta
 
 @menu
 * Top-level Settings::
+* Item Settings::
 * @samp{:update-record} Settings Argument: @samp{update-record} Settings Argument. 
 @end menu
 
@@ -138,6 +140,18 @@ These settings apply to the entirety of the recorded information.
 @samp{:record-update} - a function used to update a record before recording it; this can be used to, for example, set the value of an item to store the previous value of another item; the function is called with @samp{old-record} (nil if none), @samp{new-record}, and @samp{settings}; see @code{annalist--update-keybindings} for an example of how to create such a function (default: none)
 @item
 @samp{:preprocess} - a function used to alter a record before doing anything with it; it is passed the record and should return the altered record; see the default keybindings type for an example (default: none)
+@item
+@samp{:defaults} - a plist of default item settings; see below for valid item settings (default: none)
+@end itemize
+
+@node Item Settings
+@subsection Item Settings
+
+Item settings only apply to a specific item. Defaults for items that don't explicitly specify a setting can be set using the top-level @samp{:defaults} keyword.
+
+@itemize
+@item
+@samp{:test} - test function used for comparing items (default: @code{equal}; generally should be unnecessary to change)
 @end itemize
 
 @node @samp{update-record} Settings Argument
@@ -175,7 +189,7 @@ The @samp{default} view is what @code{annalist-describe} will use if no view nam
 
 @menu
 * Top-level Settings: Top-level Settings (1). 
-* Item Settings::
+* Item Settings: Item Settings (1). 
 @end menu
 
 @node Top-level Settings (1)
@@ -203,7 +217,7 @@ There is also a special @samp{:inherit} keyword that can be used to create a new
   :inherit 'keybindings)
 @end lisp
 
-@node Item Settings
+@node Item Settings (1)
 @subsection Item Settings
 
 Item settings only apply to a specific item. Defaults for items that don't explicitly specify a setting can be set using the top-level @samp{:defaults} keyword.
