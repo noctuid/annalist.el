@@ -29,6 +29,11 @@
 
 ;;; Code:
 (require 'cl-lib)
+;; must be loaded at compile time so `org-babel-map-src-blocks' can be expanded
+;; but not necessary when loading/evaling until/unless
+;; `annalist-multiline-source-blocks' is called
+(cl-eval-when (compile)
+  (require 'ob-core))
 
 (defgroup annalist nil
   "Record and display information such as keybindings."
@@ -48,20 +53,12 @@ The buffer is editable when this hook is run."
           (const :tag "content: all headlines" content)
           (const :tag "show everything, even drawers" showeverything)))
 
+(declare-function lispy-alt-multiline "lispy")
 (defcustom annalist-multiline-function #'lispy-alt-multiline
   "Used in `annalist-multiline-source-blocks' to format top level forms.
 The default is `lispy-alt-multiline' which results in shorter line lengths.
 `lispy-multiline' is another alternative."
   :type 'function)
-
-;; (defcustom annalist-storage-type 'builtin
-;;   "The method for storage.
-;; The builtin method uses builtin data structures for storing information but does
-;; not support full functionality. The emacsql method requires using an external
-;; database but supports for functionality."
-;;   :type '(choice
-;;           (const :tag "Use builin data structures" builtin)
-;;           (const :tag "Use an sql database" emacsql)))
 
 ;; * Storage Variables
 (defvar annalist--tomes nil
@@ -593,9 +590,7 @@ When lispy is installed, use `lispy-multiline' to format the elisp source blocks
 in the current buffer. This is useful since annalist will extract items to
 source blocks as a single line."
   (when (and (require 'lispy nil t) (require 'ob-core nil t))
-    (let (content
-          ;; silence warnings
-          lang beg-body end-body body)
+    (let (content)
       (save-excursion
         (org-babel-map-src-blocks nil
           (when (string= lang "emacs-lisp")
