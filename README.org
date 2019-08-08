@@ -18,11 +18,12 @@
   - [[#terminology][Terminology]]
   - [[#settings][Settings]]
   - [[#defining-new-types][Defining New Types]]
-    - [[#top-level-settings][Top-level Settings]]
+    - [[#type-top-level-settings][Type Top-level Settings]]
+    - [[#type-item-settings][Type Item Settings]]
     - [[#update-record-settings-argument][=:update-record= Settings Argument]]
   - [[#defining-views][Defining Views]]
-    - [[#top-level-settings-1][Top-level Settings]]
-    - [[#item-settings][Item Settings]]
+    - [[#view-top-level-settings][View Top-level Settings]]
+    - [[#view-item-settings][View Item Settings]]
   - [[#recording][Recording]]
   - [[#describing][Describing]]
   - [[#helper-functions][Helper Functions]]
@@ -60,7 +61,7 @@ Annalist provides the function ~annalist-define-tome~ for defining new types of 
 
 At minimum, a type definition must include =:primary-key=, =:table-start-index=, and a symbol for each item records should store. Items should be defined in the order they should appear in org headings and then in the table.
 
-*** Top-level Settings
+*** Type Top-level Settings
 These settings apply to the entirety of the recorded information.
 
 - =:table-start-index= - the index of the first item to be printed in an org table; previous items are printed as headings (default: none)
@@ -69,10 +70,10 @@ These settings apply to the entirety of the recorded information.
 - =:preprocess= - a function used to alter a record before doing anything with it; it is passed the record and should return the altered record; see the default keybindings type for an example (default: none)
 - =:defaults= - a plist of default item settings; see below for valid item settings (default: none)
 
-*** Item Settings
+*** Type Item Settings
 Item settings only apply to a specific item. Defaults for items that don't explicitly specify a setting can be set using the top-level =:defaults= keyword.
 
-- =:test= - test function used for comparing items (default: ~equal~; generally should be unnecessary to change)
+- =:test= - test function used for comparing items; only applicable to heading items and items and the primary key; for heading items, you will need to create the test with ~define-hash-table-test~ if it does not exist (default: ~equal~; generally should be unnecessary to change)
 
 *** =:update-record= Settings Argument
 The settings plist past to the =:record-update= function contains all information for both the tome type and view. The information is converted into a valid plist and some extra keywords are added. Here is an example:
@@ -103,7 +104,7 @@ Views contain settings for formatting and displaying recorded information. Setti
 
 The =default= view is what ~annalist-describe~ will use if no view name is explicitly specified. To prevent naming conflicts, external packages that create views should prefix the views with their symbol (e.g. =general-alternate-view=).
 
-*** Top-level Settings
+*** View Top-level Settings
 These settings apply to the entirety of the recorded information.
 
 - =:predicate= - a function that is passed the entire record and returns non-nil if the record should be printed (default: none)
@@ -120,7 +121,7 @@ There is also a special =:inherit= keyword that can be used to create a new type
   :inherit 'keybindings)
 #+end_src
 
-*** Item Settings
+*** View Item Settings
 Item settings only apply to a specific item. Defaults for items that don't explicitly specify a setting can be set using the top-level =:defaults= keyword.
 #+begin_src emacs-lisp
 (annalist-define-view 'keybindings 'my-view

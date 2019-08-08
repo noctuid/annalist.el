@@ -59,12 +59,16 @@ call `annalist-describe' (this is useful when writing tests)."
                                     primary-key
                                     record-update
                                     preprocess
+                                    event-test
+                                    location-test
                                     view)
   "Create the annalist-test tome type and populate it with RECORDS.
 Clear the existing tome beforehand if it exists. START-INDEX, PRIMARY-KEY,
-RECORD-UPDATE, and PREPROCESS passed to the type definition call. If VIEW is
-non-nil, the specified settings will be used for the default view."
+RECORD-UPDATE, PREPROCESS, EVENT-TEST, and LOCATION-TEST are passed to the type
+definition call. If VIEW is non-nil, the specified settings will be used for the
+default view."
   (plist-put annalist--tomes 'annalist-test nil)
+  (setf (annalist--get-view-settings 'annalist-test 'default) nil)
   (annalist-define-tome 'annalist-test
     (list
      :primary-key (or primary-key 'event)
@@ -72,8 +76,12 @@ non-nil, the specified settings will be used for the default view."
      :record-update record-update
      :preprocess preprocess
      'year
-     'event
-     'location))
+     (if event-test
+         (list 'event :test event-test)
+       'event)
+     (if location-test
+         (list 'location :test location-test)
+       'location)))
   (dolist (record records)
     (annalist-record 'annalist 'annalist-test record))
   (when view
@@ -365,6 +373,134 @@ My brother unforgiven
 ")))
 
 ;; ** Item Keywords
+(describe "The item :test keyword"
+  (it "should be used for comparing heading items"
+    (annalist-test-tome-setup
+     :start-index 2
+     :event-test 'eq
+     :records '((544 "Battle" "Windy Country")
+                (544 "Battle" "Charm")))
+    ;; because wrong test used, should get duplicates
+    (annalist-describe-expect 'annalist 'annalist-test
+      "
+* 544
+** Battle
+| Location      |
+|---------------|
+| Windy Country |
+
+** Battle
+| Location |
+|----------|
+| Charm    |
+")
+    (annalist-test-tome-setup
+     :start-index 2
+     :event-test 'equal
+     :primary-key '(year event location)
+     :records '((544 "Battle" "Windy Country")
+                (544 "Battle" "Charm")))
+    (annalist-describe-expect 'annalist 'annalist-test
+      "
+* 544
+** Battle
+| Location      |
+|---------------|
+| Windy Country |
+| Charm         |
+"))
+  (it "should be used for comparing heading items with a user-defined test"
+    (define-hash-table-test 'annalist-test-eq
+      #'eq
+      #'sxhash-eq)
+    (annalist-test-tome-setup
+     :start-index 2
+     :event-test 'annalist-test-eq
+     :records '((544 "Battle" "Windy Country")
+                (544 "Battle" "Charm")))
+    ;; because wrong test used, should get duplicates
+    (annalist-describe-expect 'annalist 'annalist-test
+      "
+* 544
+** Battle
+| Location      |
+|---------------|
+| Windy Country |
+
+** Battle
+| Location |
+|----------|
+| Charm    |
+")
+    (define-hash-table-test 'annalist-test-equal
+      #'equal
+      #'sxhash-equal)
+    (annalist-test-tome-setup
+     :start-index 2
+     :event-test 'equal
+     :primary-key '(year event location)
+     :records '((544 "Battle" "Windy Country")
+                (544 "Battle" "Charm")))
+    (annalist-describe-expect 'annalist 'annalist-test
+      "
+* 544
+** Battle
+| Location      |
+|---------------|
+| Windy Country |
+| Charm         |
+"))
+  (it "should be used for comparing the primary key of records"
+    (annalist-test-tome-setup
+     :event-test #'eq
+     :records '((544 "Battle" "Windy Country")
+                (544 "Battle" "Charm")))
+    ;; test incorrect, so there should be duplicates
+    (annalist-describe-expect 'annalist 'annalist-test
+      "
+| Year | Event  | Location      |
+|------+--------+---------------|
+|  544 | Battle | Windy Country |
+|  544 | Battle | Charm         |
+")
+    (annalist-test-tome-setup
+     :event-test #'string=
+     :records '((544 "Battle" "Windy Country")
+                (544 "Battle" "Charm")))
+    (annalist-describe-expect 'annalist 'annalist-test
+      "
+| Year | Event  | Location |
+|------+--------+----------|
+|  544 | Battle | Charm    |
+")
+    ;; list primary key with one incorrect test
+    (annalist-test-tome-setup
+     :event-test #'string=
+     :location-test #'eq
+     :primary-key '(event location)
+     :records '((543 "Battle" "Windy Country")
+                (544 "Battle" "Windy Country")))
+    (annalist-describe-expect 'annalist 'annalist-test
+      "
+| Year | Event  | Location      |
+|------+--------+---------------|
+|  543 | Battle | Windy Country |
+|  544 | Battle | Windy Country |
+")
+    ;; list primary key with correct tests
+    (annalist-test-tome-setup
+     :event-test #'string=
+     :location-test #'string=
+     :primary-key '(event location)
+     :records '((543 "Battle" "Windy Country")
+                (544 "Battle" "Windy Country")))
+    (annalist-describe-expect 'annalist 'annalist-test
+      "
+| Year | Event  | Location      |
+|------+--------+---------------|
+|  544 | Battle | Windy Country |
+")))
+
 (describe "The item :predicate keyword"
   (it "should determine whether a heading should be printed"
     (annalist-test-tome-setup

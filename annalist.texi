@@ -45,14 +45,14 @@ Usage
 
 Defining New Types
 
-* Top-level Settings::
-* Item Settings::
+* Type Top-level Settings::
+* Type Item Settings::
 * @samp{:update-record} Settings Argument: @samp{update-record} Settings Argument. 
 
 Defining Views
 
-* Top-level Settings: Top-level Settings (1). 
-* Item Settings: Item Settings (1). 
+* View Top-level Settings::
+* View Item Settings::
 
 Helper Functions
 
@@ -121,13 +121,13 @@ Annalist provides the function @code{annalist-define-tome} for defining new type
 At minimum, a type definition must include @samp{:primary-key}, @samp{:table-start-index}, and a symbol for each item records should store. Items should be defined in the order they should appear in org headings and then in the table.
 
 @menu
-* Top-level Settings::
-* Item Settings::
+* Type Top-level Settings::
+* Type Item Settings::
 * @samp{:update-record} Settings Argument: @samp{update-record} Settings Argument. 
 @end menu
 
-@node Top-level Settings
-@subsection Top-level Settings
+@node Type Top-level Settings
+@subsection Type Top-level Settings
 
 These settings apply to the entirety of the recorded information.
 
@@ -144,14 +144,14 @@ These settings apply to the entirety of the recorded information.
 @samp{:defaults} - a plist of default item settings; see below for valid item settings (default: none)
 @end itemize
 
-@node Item Settings
-@subsection Item Settings
+@node Type Item Settings
+@subsection Type Item Settings
 
 Item settings only apply to a specific item. Defaults for items that don't explicitly specify a setting can be set using the top-level @samp{:defaults} keyword.
 
 @itemize
 @item
-@samp{:test} - test function used for comparing items (default: @code{equal}; generally should be unnecessary to change)
+@samp{:test} - test function used for comparing items; only applicable to heading items and items and the primary key; for heading items, you will need to create the test with @code{define-hash-table-test} if it does not exist (default: @code{equal}; generally should be unnecessary to change)
 @end itemize
 
 @node @samp{update-record} Settings Argument
@@ -188,12 +188,12 @@ Views contain settings for formatting and displaying recorded information. Setti
 The @samp{default} view is what @code{annalist-describe} will use if no view name is explicitly specified. To prevent naming conflicts, external packages that create views should prefix the views with their symbol (e.g. @samp{general-alternate-view}).
 
 @menu
-* Top-level Settings: Top-level Settings (1). 
-* Item Settings: Item Settings (1). 
+* View Top-level Settings::
+* View Item Settings::
 @end menu
 
-@node Top-level Settings (1)
-@subsection Top-level Settings
+@node View Top-level Settings
+@subsection View Top-level Settings
 
 These settings apply to the entirety of the recorded information.
 
@@ -217,8 +217,8 @@ There is also a special @samp{:inherit} keyword that can be used to create a new
   :inherit 'keybindings)
 @end lisp
 
-@node Item Settings (1)
-@subsection Item Settings
+@node View Item Settings
+@subsection View Item Settings
 
 Item settings only apply to a specific item. Defaults for items that don't explicitly specify a setting can be set using the top-level @samp{:defaults} keyword.
 @lisp
