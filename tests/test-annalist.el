@@ -30,13 +30,13 @@
 (require 'org-element)
 
 ;; * Helpers
-(defun annalist-describe-expect (annalist type &optional result)
+(defun annalist-describe-expect (annalist type &optional result view)
   "Compare the result of running `annalist-describe' with an expected one.
-Call `annalist-describe' with ANNALIST and TYPE and compare the output to
+Call `annalist-describe' with ANNALIST, TYPE, and VIEW and compare the output to
 RESULT. If RESULT has a leading newline, remove it first. If RESULT is nil, just
 call `annalist-describe' (this is useful when writing tests)."
   (declare (indent 2))
-  (annalist-describe annalist type)
+  (annalist-describe annalist type view)
   (when result
     (when (string= (substring result 0 1) "\n")
       (setq result (substring result 1)))
@@ -1036,7 +1036,25 @@ The Lady and the Ten Who Were Taken are unearthed
 ")))
 
 ;; * View Definition
-;; TODO test inheritance
+(describe "annalist-define-view"
+  (it "should support inheriting settings from another view"
+    (annalist-test-tome-setup
+     :view '(:defaults (:title "All their days are numbered")
+             (location :format annalist-verbatim)))
+    (annalist-define-view 'annalist-test 'alternate
+      '(:defaults (:format annalist-code :title nil)
+        :predicate (lambda (record)
+                     (string= (nth 2 record) "Northern Continent"))
+        (location :title "Place"))
+      :inherit 'default)
+    (annalist-describe-expect 'annalist 'annalist-test
+      "
+| Year  | Event                                               | Place                |
+|-------+-----------------------------------------------------+----------------------|
+| ~0~   | ~Beginning of the Domination~                       | =Northern Continent= |
+| ~470~ | ~The Lady and the Ten Who Were Taken are unearthed~ | =Northern Continent= |
+"
+      'alternate)))
 
 ;; * Annalist Record
 ;; TODO test recording with plist instead of list
