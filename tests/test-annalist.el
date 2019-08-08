@@ -93,9 +93,50 @@ default view."
   (setq indent-tabs-mode nil))
 
 ;; * Annalist Helpers
+;; ** List
 ;; TODO plistify-settings, plistify, listify
-;; TODO sorting and formatting helpers
 
+;; ** Formatting
+(describe "annalist-verbatim"
+  (it "should surround an item with ="
+    (expect (annalist-verbatim "rumel")
+            :to-equal "=rumel=")
+    (expect (annalist-verbatim 'spear)
+            :to-equal "=spear=")))
+
+(describe "annalist-code"
+  (it "should surround an item with ~"
+    (expect (annalist-code "foo")
+            :to-equal "~foo~")
+    (expect (annalist-code 'bar)
+            :to-equal "~bar~")))
+
+(describe "annalist-capitalize"
+  (it "should capitalize an item"
+    (expect (annalist-capitalize "the lady")
+            :to-equal "The Lady")
+    (expect (annalist-capitalize 'croaker)
+            :to-equal "Croaker")))
+
+(describe "annalist-compose"
+  (it "should be capable of composing formatting functions"
+    (expect (funcall (annalist-compose #'annalist-verbatim
+                                       #'annalist-capitalize)
+                     "the annals")
+            :to-equal "=The Annals=")))
+
+;; ** Sorting
+(describe "annalist-string-<"
+  (it "should return whether the string representation of a is less than b"
+    (expect (annalist-string-< "a" "b"))
+    (expect (annalist-string-< 'a 'b))))
+
+(describe "annalist-key-<"
+  (it "should return whether the string representation of key a is less than b"
+    (expect (annalist-key-< "a" "b"))
+    (expect (annalist-key-< (kbd "C-c a") (kbd "C-c b")))))
+
+;; ** Source Block Formatting
 (describe "annalist-multiline-source-blocks"
   (before-all
     (add-hook 'emacs-lisp-mode-hook #'annalist-no-tabs))
