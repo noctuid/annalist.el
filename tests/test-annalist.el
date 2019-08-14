@@ -53,6 +53,10 @@ call `annalist-describe' (this is useful when writing tests)."
      "Northern Continent"))
   "Default records used by `annalist-test-tome-setup'.")
 
+(defun annalist--clear-tester-tome (type)
+  "Delete all records recorded by annalist-tester in the tome for TYPE."
+  (puthash 'annalist-tester nil (annalist--tome type)))
+
 (cl-defun annalist-test-tome-setup (&key
                                     (records annalist-test-tome-default-records)
                                     start-index
@@ -67,7 +71,7 @@ Clear the existing tome beforehand if it exists. START-INDEX, PRIMARY-KEY,
 RECORD-UPDATE, PREPROCESS, TEST, and EVENT-TEST are passed to the type
 definition call. If VIEW is non-nil, the specified settings will be used for the
 default view."
-  (plist-put annalist--tomes 'annalist-test nil)
+  (annalist--clear-tester-tome 'annalist-test)
   (setf (annalist--get-view-settings 'annalist-test 'default) nil)
   (annalist-define-tome 'annalist-test
     (list
@@ -82,7 +86,7 @@ default view."
        'event)
      'location))
   (dolist (record records)
-    (annalist-record 'annalist 'annalist-test record))
+    (annalist-record 'annalist-tester 'annalist-test record))
   (when view
     (annalist-define-view 'annalist-test 'default
       view)))
@@ -208,7 +212,7 @@ default view."
 (describe "The :table-start-index keyword"
   (it "should determine which items are printed in tables"
     (annalist-test-tome-setup :start-index 0)
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                             | Location           |
 |-------+---------------------------------------------------+--------------------|
@@ -220,7 +224,7 @@ default view."
 ")
 
     (annalist-test-tome-setup :start-index 1)
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * 559
 | Event                        | Location           |
@@ -245,7 +249,7 @@ default view."
 ")
 
     (annalist-test-tome-setup :start-index 2)
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * 559
 ** The Siege of Dejagore begins
@@ -284,7 +288,7 @@ default view."
                 ;; these are the same with default primary key
                 (551 "Battle" "Northern Continent")
                 (559 "Battle" "Southern Continent")))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 | Year | Event                       | Location           |
 |------+-----------------------------+--------------------|
@@ -301,7 +305,7 @@ default view."
                 ;; these are now different
                 (551 "Battle" "Northern Continent")
                 (559 "Battle" "Southern Continent")))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 | Year | Event                       | Location           |
 |------+-----------------------------+--------------------|
@@ -325,7 +329,7 @@ It concatenates the locations from OLD-RECORD and NEW-RECORD."
      :records '((0 "foo" "bar")
                 (0 "foo" "baz")
                 (0 "foo" "qux")))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 | Year | Event | Location  |
 |------+-------+-----------|
@@ -342,7 +346,7 @@ It concatenates the locations from OLD-RECORD and NEW-RECORD."
     (annalist-test-tome-setup
      :preprocess #'annalist-test-preprocess
      :records '((0 "foo" "location")))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 | Year | Event | Location       |
 |------+-------+----------------|
@@ -355,7 +359,7 @@ It concatenates the locations from OLD-RECORD and NEW-RECORD."
   (it "should determine whether to print a record"
     (annalist-test-tome-setup
      :view '(:predicate (lambda (record) (cl-minusp (nth 0 record)))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                   | Location           |
 |-------+-----------------------------------------+--------------------|
@@ -367,7 +371,7 @@ It concatenates the locations from OLD-RECORD and NEW-RECORD."
     (annalist-test-tome-setup
      :view '(:sort (lambda (record-a record-b) (< (nth 0 record-a)
                                                   (nth 0 record-b)))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                             | Location           |
 |-------+---------------------------------------------------+--------------------|
@@ -384,7 +388,7 @@ It concatenates the locations from OLD-RECORD and NEW-RECORD."
      :view '(:hooks (list (lambda ()
                             (goto-char (point-max))
                             (insert "Water sleeps\n")))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                             | Location           |
 |-------+---------------------------------------------------+--------------------|
@@ -400,7 +404,7 @@ Water sleeps
      :view '(:hooks (lambda ()
                       (goto-char (point-max))
                       (insert "My brother unforgiven\n"))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                             | Location           |
 |-------+---------------------------------------------------+--------------------|
@@ -419,7 +423,7 @@ My brother unforgiven
      :records '((544 "Battle" "Windy Country")
                 (544 "Battle" "Charm")))
     ;; test incorrect, so there should be duplicates
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 | Year | Event  | Location      |
 |------+--------+---------------|
@@ -429,7 +433,7 @@ My brother unforgiven
     (annalist-test-tome-setup
      :records '((544 "Battle" "Windy Country")
                 (544 "Battle" "Charm")))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 | Year | Event  | Location |
 |------+--------+----------|
@@ -440,7 +444,7 @@ My brother unforgiven
      :primary-key '(event location)
      :records '((543 "Battle" "Windy Country")
                 (544 "Battle" "Windy Country")))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 | Year | Event  | Location      |
 |------+--------+---------------|
@@ -457,7 +461,7 @@ My brother unforgiven
        :records '((544 "Battle" "Windy Country")
                   (544 "Battle" "Charm")))
       ;; because wrong test used, should get duplicates
-      (annalist-describe-expect 'annalist 'annalist-test
+      (annalist-describe-expect 'annalist-tester 'annalist-test
         "
 | Year | Event  | Location      |
 |------+--------+---------------|
@@ -471,7 +475,7 @@ My brother unforgiven
        :test 'annalist-test-equal
        :records '((544 "Battle" "Windy Country")
                   (544 "Battle" "Charm")))
-      (annalist-describe-expect 'annalist 'annalist-test
+      (annalist-describe-expect 'annalist-tester 'annalist-test
         "
 | Year | Event  | Location |
 |------+--------+----------|
@@ -487,7 +491,7 @@ My brother unforgiven
      :records '((544 "Battle" "Windy Country")
                 (544 "Battle" "Charm")))
     ;; because wrong test used, should get duplicates
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * 544
 ** Battle
@@ -506,7 +510,7 @@ My brother unforgiven
      :primary-key '(year event location)
      :records '((544 "Battle" "Windy Country")
                 (544 "Battle" "Charm")))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * 544
 ** Battle
@@ -527,7 +531,7 @@ My brother unforgiven
        :records '((544 "Battle" "Windy Country")
                   (544 "Battle" "Charm")))
       ;; because wrong test used, should get duplicates
-      (annalist-describe-expect 'annalist 'annalist-test
+      (annalist-describe-expect 'annalist-tester 'annalist-test
         "
 * 544
 ** Battle
@@ -549,7 +553,7 @@ My brother unforgiven
        :primary-key '(year event location)
        :records '((544 "Battle" "Windy Country")
                   (544 "Battle" "Charm")))
-      (annalist-describe-expect 'annalist 'annalist-test
+      (annalist-describe-expect 'annalist-tester 'annalist-test
         "
 * 544
 ** Battle
@@ -564,7 +568,7 @@ My brother unforgiven
     (annalist-test-tome-setup
      :start-index 1
      :view '((year :predicate (lambda (year) (< year 0)))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * -1442
 | Event                                   | Location           |
@@ -575,7 +579,7 @@ My brother unforgiven
     (annalist-test-tome-setup
      :start-index 1
      :view '(:defaults (:predicate (lambda (year) (< year 0)))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * -1442
 | Event                                   | Location           |
@@ -587,7 +591,7 @@ My brother unforgiven
      :start-index 1
      :view '(:defaults (:predicate (lambda (year) (>= year 0)))
              (year :predicate (lambda (year) (< year 0)))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * -1442
 | Event                                   | Location           |
@@ -600,7 +604,7 @@ My brother unforgiven
     (annalist-test-tome-setup
      :start-index 1
      :view '((year :prioritize (0 470))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * 0
 | Event                       | Location           |
@@ -627,7 +631,7 @@ My brother unforgiven
     (annalist-test-tome-setup
      :start-index 1
      :view '(:defaults (:prioritize (0 470))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * 0
 | Event                       | Location           |
@@ -655,7 +659,7 @@ My brother unforgiven
      :start-index 1
      :view '(:defaults (:prioritize (559))
              (year :prioritize (0 470))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * 0
 | Event                       | Location           |
@@ -683,7 +687,7 @@ My brother unforgiven
      :start-index 1
      :view '((year :prioritize (0 470)
                    :sort <)))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * 0
 | Event                       | Location           |
@@ -712,7 +716,7 @@ My brother unforgiven
     (annalist-test-tome-setup
      :start-index 1
      :view '((year :sort <)))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * -1442
 | Event                                   | Location           |
@@ -739,7 +743,7 @@ My brother unforgiven
     (annalist-test-tome-setup
      :start-index 1
      :view '(:defaults (:sort <)))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * -1442
 | Event                                   | Location           |
@@ -767,7 +771,7 @@ My brother unforgiven
      :start-index 1
      :view '(:defaults (:sort >)
              (year :sort <)))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * -1442
 | Event                                   | Location           |
@@ -795,7 +799,7 @@ My brother unforgiven
   (it "should specify what to print for column titles"
     (annalist-test-tome-setup
      :view '((year :title "YEAR")))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  YEAR | Event                                             | Location           |
 |-------+---------------------------------------------------+--------------------|
@@ -808,7 +812,7 @@ My brother unforgiven
   (it "should not fall back to a value in :defaults"
     (annalist-test-tome-setup
      :view '(:defaults (:title "<placeholder>")))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                             | Location           |
 |-------+---------------------------------------------------+--------------------|
@@ -824,7 +828,7 @@ My brother unforgiven
     (annalist-test-tome-setup
      :start-index 1
      :view '((year :format annalist-verbatim)))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 * =559=
 | Event                        | Location           |
@@ -850,7 +854,7 @@ My brother unforgiven
   (it "should specify how to format an item in a table cell"
     (annalist-test-tome-setup
      :view '((year :format annalist-verbatim)))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 | Year    | Event                                             | Location           |
 |---------+---------------------------------------------------+--------------------|
@@ -864,7 +868,7 @@ My brother unforgiven
     (annalist-test-tome-setup
      :view '(:defaults (:format upcase)
              (year :format annalist-verbatim)))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 | Year    | Event                                             | Location           |
 |---------+---------------------------------------------------+--------------------|
@@ -880,7 +884,7 @@ My brother unforgiven
   (it "should specify the max width for a table cell before truncation"
     (annalist-test-tome-setup
      :view '((event :max-width 40)))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                   | Location           |
 |-------+-----------------------------------------+--------------------|
@@ -893,7 +897,7 @@ My brother unforgiven
   (it "should fall back to a value from :defaults"
     (annalist-test-tome-setup
      :view '(:defaults (:max-width 40)))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                   | Location           |
 |-------+-----------------------------------------+--------------------|
@@ -907,7 +911,7 @@ My brother unforgiven
     (annalist-test-tome-setup
      :view '(:defaults (:max-width 20)
              (event :max-width 40)))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                   | Location           |
 |-------+-----------------------------------------+--------------------|
@@ -924,7 +928,7 @@ of truncating them"
     (annalist-test-tome-setup
      :view '((event :max-width 30
                     :extractp (lambda (_item) t))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                        | Location           |
 |-------+------------------------------+--------------------|
@@ -946,7 +950,7 @@ Temple of Traveller's Repose is founded
   (it "should fall back to a a value from :defaults"
     (annalist-test-tome-setup
      :view '(:defaults (:max-width 40 :extractp (lambda (_item) t))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                   | Location           |
 |-------+-----------------------------------------+--------------------|
@@ -963,7 +967,7 @@ The Lady and the Ten Who Were Taken are unearthed
     (annalist-test-tome-setup
      :view '(:defaults (:extractp (lambda (_item) nil))
              (event :max-width 40 :extractp (lambda (_item) t))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                   | Location           |
 |-------+-----------------------------------------+--------------------|
@@ -985,7 +989,7 @@ instead of footnotes"
      :view '((event :max-width 30
                     :extractp (lambda (_item) t)
                     :src-block-p (lambda (_item) t))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                        | Location           |
 |-------+------------------------------+--------------------|
@@ -1015,7 +1019,7 @@ Temple of Traveller's Repose is founded
      :view '(:defaults (:max-width 40
                         :extractp (lambda (_item) t)
                         :src-block-p (lambda (_item) t))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                   | Location           |
 |-------+-----------------------------------------+--------------------|
@@ -1036,7 +1040,7 @@ The Lady and the Ten Who Were Taken are unearthed
              (event :max-width 40
                     :extractp (lambda (_item) t)
                     :src-block-p (lambda (_item) t))))
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 |  Year | Event                                   | Location           |
 |-------+-----------------------------------------+--------------------|
@@ -1064,7 +1068,7 @@ The Lady and the Ten Who Were Taken are unearthed
                      (string= (nth 2 record) "Northern Continent"))
         (location :title "Place"))
       :inherit 'default)
-    (annalist-describe-expect 'annalist 'annalist-test
+    (annalist-describe-expect 'annalist-tester 'annalist-test
       "
 | Year  | Event                                               | Place                |
 |-------+-----------------------------------------------------+----------------------|

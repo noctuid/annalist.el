@@ -146,7 +146,7 @@ Formatting:
 - =:src-block-p= function to determine whether to extract to a source block when the =:extractp= function returns non-nil (default: ~listp~)
 
 ** Recording
-~annalist-record~ is used to record information. It requires three arguments: =annalist= =type= =record=. The =annalist= argument will usually be the same as the package prefix that is recording the data. ='annalist= is reserved for this package. =type= is the type of data to record, and =record= is the actual data. Optionally, the user can also specify metadata that won't be printed after the final item. Buffer-local records should additionally specify =:local t=. Here is an example:
+~annalist-record~ is used to record information. It requires three arguments: =annalist= =type= =record=. The =annalist= argument will usually be the same as the package prefix that is recording the data. ='annalist= and any other names prefixed by ='annalist= are reserved for this package. =type= is the type of data to record, and =record= is the actual data. Optionally, the user can also specify metadata that won't be printed after the final item. Buffer-local records should additionally specify =:local t=. Here is an example:
 #+begin_src emacs-lisp
 (annalist-record 'me 'keybindings
                  (list
