@@ -207,7 +207,7 @@ stored settings for TYPE."
     (if view
         plist
       (append (list :type type
-                    :key-indices key-indices
+                    :key-indices (sort key-indices #'<)
                     :final-index (1- counter)
                     :metadata-index counter)
               plist))))
@@ -244,6 +244,20 @@ stored settings for TYPE."
                   (plist-put annalist--tomes type
                              (make-hash-table :test #'equal))))
           (annalist--tome type local)))))
+
+;; * Hash Table Helpers
+(defsubst annalist--hash-table-keys (hash-table)
+  "Return a list of keys in HASH-TABLE.
+The default `hash-table-keys' makes no guarantee about the order of the keys,
+and the behavior differs between Emacs versions. This function returns the keys
+in the order of usage (least recent to most recent) at least for Emacs 24.4 up
+to Emacs 27."
+  (cl-loop for k being the hash-keys of hash-table collect k))
+
+(defsubst annalist--hash-table-values (hash-table)
+  "Return a list of the values in HASH-TABLE.
+See `annalist--hash-table-keys' for more information."
+  (cl-loop for v being the hash-values of hash-table collect v))
 
 ;; * Type Definition
 (defun annalist--get-tome-settings (type)
@@ -289,33 +303,25 @@ SETTINGS is the plist of settings for the type of thing/tome the record
 corresponds to (e.g. keybindings).
 
 When the primary key in NEW-RECORD matches that in an old record exactly (as
-determined by :test in SETTINGS or `equal'), remove the old record and add
-NEW-RECORD to the front of EXISTING-RECORDS.
+determined by :test in SETTINGS or `equal'), replace the old record with
+NEW-RECORD.
 
 When :record-update is present in SETTINGS, use its value to update the
 NEW-RECORD (e.g. to update a \"previous definition\" item). An update function
 is passed the old record (nil if none), NEW-RECORD, and SETTINGS. It should
 return an updated recording to store."
+  (unless existing-records
+    (setq existing-records (make-hash-table :test (or (plist-get settings :test)
+                                                      #'equal))))
   (let* ((key-indices (plist-get settings :key-indices))
+         (primary-key (cl-loop for index in key-indices
+                               collect (nth index new-record)))
          (update (plist-get settings :record-update))
-         old-record)
-    (setq existing-records
-          (cl-loop for record in existing-records
-                   if (and key-indices
-                           (cl-dolist (index key-indices t)
-                             (let ((test (annalist--test settings index)))
-                               (unless (funcall test
-                                                (nth index new-record)
-                                                (nth index record))
-                                 (cl-return)))))
-                   ;; remove old record and put new record at front
-                   do (setq old-record record)
-                   else
-                   ;; keep record as-is
-                   collect record))
-    (when update
+         (old-record (gethash primary-key existing-records)))
+    (when (and update old-record)
       (setq new-record (funcall update old-record new-record settings)))
-    (cons new-record existing-records)))
+    (puthash primary-key new-record existing-records)
+    existing-records))
 
 (defun annalist--record-headings (record store depth settings)
   "Non-destructively record RECORD into STORE, returning STORE.
@@ -390,7 +396,7 @@ the symbols used for the definition of TYPE."
   "Print an org table for RECORDS using SETTINGS."
   ;; printed oldest to newest
   ;; TODO could add option to do newest to oldest instead
-  (setq records (reverse records))
+  (setq records (annalist--hash-table-values records))
   (let* ((predicate (plist-get settings :predicate))
          (sorter (plist-get settings :sort))
          (sorted-records (if sorter
@@ -452,14 +458,6 @@ the symbols used for the definition of TYPE."
                                          (funcall formatter item)
                                        item)))))
         (princ "\n")))))
-
-(defsubst annalist--hash-table-keys (hash-table)
-  "Return a list of keys in HASH-TABLE.
-The default `hash-table-keys' makes no guarantee about the order of the keys,
-and the behavior differs between Emacs versions. This function returns the keys
-in the order of usage (least recent to most recent) at least for Emacs 24.4 up
-to Emacs 27."
-  (cl-loop for k being the hash-keys of hash-table collect k))
 
 (defun annalist--print-headings (store depth settings &optional
                                        increase-print-depth)
@@ -691,14 +689,13 @@ The previous definition item in NEW-RECORD will updated based on the old
 recorded previous definition (which may not exist), the actual/current
 definition, and the new definition. SETTINGS is used to check for a test
 function for comparing key definitions."
-  (let* ((type (plist-get settings :type))
-         (old-record (annalist-plistify-record old-record type))
-         (new-record (annalist-plistify-record new-record type))
-         (new-metadata (plist-get new-record t))
-         (old-def (plist-get old-record 'definition))
-         (keymap-sym (plist-get new-record 'keymap))
-         (state (plist-get new-record 'state))
-         (key (plist-get new-record 'key))
+  (let* ((new-metadata (when (> (plist-get settings :metadata-index)
+                                (length new-record))
+                         (last new-record)))
+         (old-def (nth 4 old-record))
+         (keymap-sym (nth 0 new-record))
+         (state (nth 1 new-record))
+         (key (nth 2 new-record))
          (keymap (or (plist-get new-metadata :keymap)
                      (annalist--get-keymap
                       state
@@ -706,14 +703,13 @@ function for comparing key definitions."
                       (plist-get new-metadata :minor-mode))))
          (current-def (when keymap
                         (annalist--lookup-key keymap key)))
-         (new-def (plist-get new-record 'definition))
+         (new-def (nth 3 new-record))
          (test (annalist--test settings 'definition)))
     ;; keybinding may still be deferred
     (when current-def
-      (plist-put new-record
-                 'previous-definition
-                 (annalist--previous-value old-def current-def new-def test)))
-    (annalist-listify-record new-record type)))
+      (setf (nth 4 new-record)
+            (annalist--previous-value old-def current-def new-def test)))
+    new-record))
 
 (defun annalist--valid-keymap-p (keymap-sym)
   "Return whether KEYMAP-SYM is bound.

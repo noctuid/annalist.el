@@ -141,6 +141,8 @@ These settings apply to the entirety of the recorded information.
 @item
 @samp{:preprocess} - a function used to alter a record before doing anything with it; it is passed the record and should return the altered record; see the default keybindings type for an example (default: none)
 @item
+@samp{:test} - test function used for comparing the primary key (as a list of each item in the order it appears in the definition); you will need to create the test with @code{define-hash-table-test} if it does not exist (default: @code{equal}; generally should be unnecessary to change)
+@item
 @samp{:defaults} - a plist of default item settings; see below for valid item settings (default: none)
 @end itemize
 
@@ -151,7 +153,7 @@ Item settings only apply to a specific item. Defaults for items that don't expli
 
 @itemize
 @item
-@samp{:test} - test function used for comparing items; only applicable to heading items and items and the primary key; for heading items, you will need to create the test with @code{define-hash-table-test} if it does not exist (default: @code{equal}; generally should be unnecessary to change)
+@samp{:test} - test function used for comparing items; only applicable to heading items; you will need to create the test with @code{define-hash-table-test} if it does not exist (default: @code{equal}; generally should be unnecessary to change)
 @end itemize
 
 @node @samp{update-record} Settings Argument
@@ -314,7 +316,7 @@ It is possible to have custom filtering/sorting behavior by using a custom view:
 @node List Helpers
 @subsection List Helpers
 
-@code{annalist-plistify-record} can be used to convert a record that is an ordered list to a plist. @code{annalist-listify-record} can be used to do the opposite. This is what the @samp{:plist} argument for @code{annalist-record} uses internally. These functions can be useful, for example, inside a @samp{:record-update} function, so that you can get record items by their name instead of by their index.
+@code{annalist-plistify-record} can be used to convert a record that is an ordered list to a plist. @code{annalist-listify-record} can be used to do the opposite. This is what the @samp{:plist} argument for @code{annalist-record} uses internally. These functions can be useful, for example, inside a @samp{:record-update} function, so that you can get record items by their name instead of by their index. However, if there will be a lot of data recorded for a type during Emacs initialization time, the extra time to convert between list types can add up, so it's recommended that you don't use these functions or @samp{:plist} in such cases.
 
 @node Formatting Helpers
 @subsection Formatting Helpers
