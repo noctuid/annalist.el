@@ -446,35 +446,37 @@ My brother unforgiven
 |------+--------+---------------|
 |  544 | Battle | Windy Country |
 "))
-  (it "should be used for comparing the primary key with a user-defined test"
-    (define-hash-table-test 'annalist-test-eq
-      #'eq
-      #'sxhash-eq)
-    (annalist-test-tome-setup
-     :test 'annalist-test-eq
-     :records '((544 "Battle" "Windy Country")
-                (544 "Battle" "Charm")))
-    ;; because wrong test used, should get duplicates
-    (annalist-describe-expect 'annalist 'annalist-test
-      "
+  ;; `sxhash-eq' doesn't exist in older versions
+  (when (>= emacs-major-version 26)
+    (it "should be used for comparing the primary key with a user-defined test"
+      (define-hash-table-test 'annalist-test-eq
+        #'eq
+        #'sxhash-eq)
+      (annalist-test-tome-setup
+       :test 'annalist-test-eq
+       :records '((544 "Battle" "Windy Country")
+                  (544 "Battle" "Charm")))
+      ;; because wrong test used, should get duplicates
+      (annalist-describe-expect 'annalist 'annalist-test
+        "
 | Year | Event  | Location      |
 |------+--------+---------------|
 |  544 | Battle | Windy Country |
 |  544 | Battle | Charm         |
 ")
-    (define-hash-table-test 'annalist-test-equal
-      #'equal
-      #'sxhash-equal)
-    (annalist-test-tome-setup
-     :test 'annalist-test-equal
-     :records '((544 "Battle" "Windy Country")
-                (544 "Battle" "Charm")))
-    (annalist-describe-expect 'annalist 'annalist-test
-      "
+      (define-hash-table-test 'annalist-test-equal
+        #'equal
+        #'sxhash-equal)
+      (annalist-test-tome-setup
+       :test 'annalist-test-equal
+       :records '((544 "Battle" "Windy Country")
+                  (544 "Battle" "Charm")))
+      (annalist-describe-expect 'annalist 'annalist-test
+        "
 | Year | Event  | Location |
 |------+--------+----------|
 |  544 | Battle | Charm    |
-")))
+"))))
 
 ;; ** Item Keywords
 (describe "The item :test keyword"
@@ -513,18 +515,20 @@ My brother unforgiven
 | Windy Country |
 | Charm         |
 "))
-  (it "should be used for comparing heading items with a user-defined test"
-    (define-hash-table-test 'annalist-test-eq
-      #'eq
-      #'sxhash-eq)
-    (annalist-test-tome-setup
-     :start-index 2
-     :event-test 'annalist-test-eq
-     :records '((544 "Battle" "Windy Country")
-                (544 "Battle" "Charm")))
-    ;; because wrong test used, should get duplicates
-    (annalist-describe-expect 'annalist 'annalist-test
-      "
+  ;; 
+  (when (>= emacs-major-version 26)
+    (it "should be used for comparing heading items with a user-defined test"
+      (define-hash-table-test 'annalist-test-eq
+        #'eq
+        #'sxhash-eq)
+      (annalist-test-tome-setup
+       :start-index 2
+       :event-test 'annalist-test-eq
+       :records '((544 "Battle" "Windy Country")
+                  (544 "Battle" "Charm")))
+      ;; because wrong test used, should get duplicates
+      (annalist-describe-expect 'annalist 'annalist-test
+        "
 * 544
 ** Battle
 | Location      |
@@ -536,24 +540,24 @@ My brother unforgiven
 |----------|
 | Charm    |
 ")
-    (define-hash-table-test 'annalist-test-equal
-      #'equal
-      #'sxhash-equal)
-    (annalist-test-tome-setup
-     :start-index 2
-     :event-test 'annalist-test-equal
-     :primary-key '(year event location)
-     :records '((544 "Battle" "Windy Country")
-                (544 "Battle" "Charm")))
-    (annalist-describe-expect 'annalist 'annalist-test
-      "
+      (define-hash-table-test 'annalist-test-equal
+        #'equal
+        #'sxhash-equal)
+      (annalist-test-tome-setup
+       :start-index 2
+       :event-test 'annalist-test-equal
+       :primary-key '(year event location)
+       :records '((544 "Battle" "Windy Country")
+                  (544 "Battle" "Charm")))
+      (annalist-describe-expect 'annalist 'annalist-test
+        "
 * 544
 ** Battle
 | Location      |
 |---------------|
 | Windy Country |
 | Charm         |
-")))
+"))))
 
 (describe "The item :predicate keyword"
   (it "should determine whether a heading should be printed"
