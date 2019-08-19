@@ -615,15 +615,15 @@ source blocks as a single line."
   "Preprocess RECORD by normalizing the keymap.
 If the keymap is 'global and the state is non-nil, set the keymap to be the
 actual evil global keymap (e.g. 'evil-normal-state-map)."
-  (let* ((record (annalist-plistify-record record 'keybindings))
-         (keymap (plist-get record 'keymap))
-         (state (plist-get record 'state)))
-    (when (and state (eq keymap 'global))
-      (plist-put record 'state nil)
-      (plist-put record
-                 'keymap
-                 (evil-state-property state :keymap)))
-    (annalist-listify-record record 'keybindings)))
+  (let* ((keymap-sym (nth 0 record))
+         (state (nth 1 record)))
+    (when (and state (memq keymap-sym '(global local)))
+      (setf (nth 1 record) nil)
+      (setf (nth 0 record)
+            (if (eq keymap-sym 'global)
+                (evil-state-property state :keymap)
+              (evil-state-property state :local-keymap))))
+    record))
 
 (declare-function evil-state-property "evil-common")
 (declare-function evil-get-minor-mode-keymap "evil-core")
