@@ -120,23 +120,24 @@ function only handles one level of nesting."
                                               val)))
     res))
 
-(defun annalist--get (plist fallback-plist keyword)
+(defun annalist--get (plist fallback-plist keyword &optional default)
   "From PLIST or FALLBACK-PLIST get the corresponding value for KEYWORD.
 FALLBACK-PLIST will be checked when KEYWORD does not exist in PLIST (but not in
-cases where it is explicitly specified in PLIST as nil)."
+cases where it is explicitly specified in PLIST as nil). If KEYWORD is not
+specified in either plist, return DEFAULT."
   (cl-getf plist keyword
-           (plist-get fallback-plist keyword)))
+           (cl-getf fallback-plist keyword default)))
 
-(defun annalist--item-get (settings item prop)
+(defun annalist--item-get (settings item prop &optional default)
   "Extract an item-specific setting from SETTINGS.
 SETTINGS is a settings plist of the form (ITEM1 (PROP1 value1) :defaults (PROP1
 defaultvalue)). ITEM is the item to check for PROP for. PROP is the setting to
 check for (e.g. :format). If PROP does not appear in the ITEM's plist, return
-the value from the :defaults plist (or nil if the property is not specified in
-either)."
+the value from the :defaults plist (or DEFAULT if the property is not specified
+in either)."
   (let ((default-item-settings (plist-get settings :defaults))
         (item-settings (plist-get settings item)))
-    (annalist--get item-settings default-item-settings prop)))
+    (annalist--get item-settings default-item-settings prop default)))
 
 (defun annalist--test (settings item)
   "Return the test specified by :test in SETTINGS for ITEM's plist.
@@ -318,7 +319,7 @@ return an updated recording to store."
                                collect (nth index new-record)))
          (update (plist-get settings :record-update))
          (old-record (gethash primary-key existing-records)))
-    (when (and update old-record)
+    (when update
       (setq new-record (funcall update old-record new-record settings)))
     (puthash primary-key new-record existing-records)
     existing-records))
@@ -360,11 +361,15 @@ the symbols used for the definition of TYPE."
   (let* ((tome (annalist--tome type local))
          (settings (annalist--get-tome-settings type))
          (preprocess (plist-get settings :preprocess))
-         (store (gethash annalist tome)))
+         (store (gethash annalist tome))
+         (num-unspecified-items (- (plist-get settings :metadata-index)
+                                   (1- (length record)))))
     (when plist
       (setq record (annalist-listify-record record type)))
     (when preprocess
       (setq record (funcall preprocess record)))
+    (unless (<= num-unspecified-items 0)
+      (setq record (nconc record (make-list num-unspecified-items nil))))
     (puthash annalist
              (annalist--record-headings record store 0 settings)
              tome)))
@@ -415,7 +420,7 @@ the symbols used for the definition of TYPE."
          do
          (let* ((item (nth i record))
                 (formatter (annalist--item-get settings i :format))
-                (max-width (annalist--item-get settings i :max-width))
+                (max-width (annalist--item-get settings i :max-width 50))
                 (extractp (annalist--item-get settings i :extractp))
                 (src-block-p (annalist--item-get settings i :src-block-p))
                 (too-long (and max-width
@@ -443,7 +448,7 @@ the symbols used for the definition of TYPE."
         (princ "|\n")))
     (princ "\n")
     ;; print footnotes
-    (dolist (footnote footnotes)
+    (dolist (footnote (nreverse footnotes))
       (let ((num (car footnote))
             (item (cadr footnote))
             (use-src-block (cl-cadddr footnote))
@@ -507,7 +512,7 @@ those settings for displaying recorded information instead of the defaults."
                     (annalist--get-view-settings type view)
                     (annalist--get-tome-settings type)))
          (tome (annalist--tome type))
-         (local-tome (annalist--tome tome t))
+         (local-tome (annalist--tome type t))
          (name-store (when tome
                        (gethash annalist tome)))
          (local-name-store (when local-tome
@@ -519,12 +524,12 @@ those settings for displaying recorded information instead of the defaults."
     ;; it is possible to check active keymaps in a predicate function)
     (when local-name-store
       (with-output-to-temp-buffer output-buffer-name
-        (princ "* Local")
+        (princ "* Local\n")
         (annalist--print-headings local-name-store 0 settings t)))
     (when name-store
       (with-output-to-temp-buffer output-buffer-name
         (when local-name-store
-          (princ "* Global"))
+          (princ "* Global\n"))
         (annalist--print-headings name-store 0 settings local-name-store)))
     (when (or local-name-store name-store)
       (with-current-buffer output-buffer-name
@@ -689,10 +694,8 @@ The previous definition item in NEW-RECORD will updated based on the old
 recorded previous definition (which may not exist), the actual/current
 definition, and the new definition. SETTINGS is used to check for a test
 function for comparing key definitions."
-  (let* ((new-metadata (when (> (plist-get settings :metadata-index)
-                                (length new-record))
-                         (last new-record)))
-         (old-def (nth 4 old-record))
+  (let* ((new-metadata (nth (plist-get settings :metadata-index) new-record))
+         (old-previous-def (nth 4 old-record))
          (keymap-sym (nth 0 new-record))
          (state (nth 1 new-record))
          (key (nth 2 new-record))
@@ -708,7 +711,8 @@ function for comparing key definitions."
     ;; keybinding may still be deferred
     (when current-def
       (setf (nth 4 new-record)
-            (annalist--previous-value old-def current-def new-def test)))
+            (annalist--previous-value old-previous-def current-def new-def
+                                      test)))
     new-record))
 
 (defun annalist--valid-keymap-p (keymap-sym)
@@ -736,7 +740,8 @@ actually defined (e.g. keybindings may be deferred until the keymap exists).
 (defvar evil-local-mode)
 (defun annalist--valid-state-and-evil-on-p (state)
   "Return whether STATE is valid `evil-local-mode' is on."
-  (and (annalist--valid-state-p state) evil-local-mode))
+  (or (null state)
+      (and (annalist--valid-state-p state) evil-local-mode)))
 
 (annalist-define-tome 'keybindings
   (list :primary-key '(keymap state key)
@@ -756,9 +761,23 @@ actually defined (e.g. keybindings may be deferred until the keymap exists).
                                              #'key-description))
         (list 'definition :format #'annalist-code)
         (list 'previous-definition :title "Previous" :format #'annalist-code)
-        :extractp #'listp
-        :src-block-p #'listp
+        :defaults (list :extractp #'listp
+                        :src-block-p #'listp)
         :hooks #'annalist-multiline-source-blocks))
+
+(annalist-define-view 'keybindings 'valid
+  (list (list 'keymap
+              :predicate #'annalist--valid-keymap-p)
+        (list 'state
+              :predicate #'annalist--valid-state-p))
+  :inherit 'default)
+
+(annalist-define-view 'keybindings 'active
+  (list (list 'keymap
+              :predicate #'annalist--active-keymap-p)
+        (list 'state
+              :predicate #'annalist--valid-state-and-evil-on-p))
+  :inherit 'default)
 
 ;; * Settings Type
 ;; TODO

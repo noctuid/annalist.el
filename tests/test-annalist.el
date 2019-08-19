@@ -28,6 +28,19 @@
 (require 'buttercup)
 (require 'annalist)
 (require 'org-element)
+(require 'evil)
+
+(evil-mode)
+
+(defvar annalist-test-map (make-sparse-keymap))
+
+(defvar annalist-test-mode-map (make-sparse-keymap))
+
+(define-minor-mode annalist-test-mode
+  "A minor mode for annalist.el tests."
+  :lighter ""
+  :keymap annalist-test-mode-map
+  (evil-normalize-keymaps))
 
 ;; * Helpers
 (defun annalist-describe-expect (annalist type &optional result view)
@@ -53,9 +66,9 @@ call `annalist-describe' (this is useful when writing tests)."
      "Northern Continent"))
   "Default records used by `annalist-test-tome-setup'.")
 
-(defun annalist--clear-tester-tome (type)
-  "Delete all records recorded by annalist-tester in the tome for TYPE."
-  (puthash 'annalist-tester nil (annalist--tome type)))
+(defun annalist--clear-tester-tome (type &optional local)
+  "Delete al of annalist-tester's records in the tome for TYPE and LOCAL."
+  (puthash 'annalist-tester nil (annalist--tome type local)))
 
 (cl-defun annalist-test-tome-setup (&key
                                     (records annalist-test-tome-default-records)
@@ -938,14 +951,14 @@ of truncating them"
 |   470 | [fn:2]                       | Outer Space        |
 |   470 | [fn:3]                       | Northern Continent |
 
-[fn:3]
-The Lady and the Ten Who Were Taken are unearthed
+[fn:1]
+Temple of Traveller's Repose is founded
 
 [fn:2]
 Tenth return of the Great Comet
 
-[fn:1]
-Temple of Traveller's Repose is founded
+[fn:3]
+The Lady and the Ten Who Were Taken are unearthed
 "))
   (it "should fall back to a a value from :defaults"
     (annalist-test-tome-setup
@@ -999,9 +1012,9 @@ instead of footnotes"
 |   470 | [fn:2]                       | Outer Space        |
 |   470 | [fn:3]                       | Northern Continent |
 
-[fn:3]
+[fn:1]
 #+begin_src emacs-lisp
-The Lady and the Ten Who Were Taken are unearthed
+Temple of Traveller's Repose is founded
 #+end_src
 
 [fn:2]
@@ -1009,9 +1022,9 @@ The Lady and the Ten Who Were Taken are unearthed
 Tenth return of the Great Comet
 #+end_src
 
-[fn:1]
+[fn:3]
 #+begin_src emacs-lisp
-Temple of Traveller's Repose is founded
+The Lady and the Ten Who Were Taken are unearthed
 #+end_src
 "))
   (it "should fall back to a a value from :defaults"
@@ -1085,12 +1098,319 @@ The Lady and the Ten Who Were Taken are unearthed
 
 ;; * Builtin Types
 ;; ** Keybindings Type
-;; TODO test formatting and titles
-;; TODO test extraction
-;; TODO test that record update works (and different values for
-;;      annalist-update-previous-key-definition)
-;; TODO test preprocess
-;; TODO test keymap handling
-;; TODO test that valid/active keybinding checks works
+(describe "The annalist keybindings default view"
+  (before-each
+    (setq annalist-test-map (make-sparse-keymap))
+    ;; TODO add back inheritance, use custom keybindings type, and just nuke all
+    ;; records
+    (annalist--clear-tester-tome 'keybindings)
+    (setq annalist--local-tomes nil))
+  (it "should have the expected formatting and titles"
+    (dolist (record (list (list 'annalist-test-map nil (kbd "C-c a") #'foo)
+                          (list 'annalist-test-map nil (kbd "C-c b") #'bar)
+                          (list 'annalist-test-map 'normal "c" #'baz)))
+      (annalist-record 'annalist-tester 'keybindings record))
+    (annalist-describe-expect 'annalist-tester 'keybindings
+      "
+* ~annalist-test-map~
+| Key     | Definition | Previous |
+|---------+------------+----------|
+| =C-c a= | ~foo~      | ~nil~    |
+| =C-c b= | ~bar~      | ~nil~    |
+
+** Normal
+| Key | Definition | Previous |
+|-----+------------+----------|
+| =c= | ~baz~      | ~nil~    |
+"))
+  (it "should truncate long non-list entries"
+    (dolist (record
+             (list
+              (list 'annalist-test-map nil (kbd "C-c a")
+                    #'foo-bar-baz-qux-quux-quuz-corge-grault-garply-waldo)))
+      (annalist-record 'annalist-tester 'keybindings record))
+    (annalist-describe-expect 'annalist-tester 'keybindings
+      "
+* ~annalist-test-map~
+| Key     | Definition                                           | Previous |
+|---------+------------------------------------------------------+----------|
+| =C-c a= | ~foo-bar-baz-qux-quux-quuz-corge-grault-garply-wald~ | ~nil~    |
+"))
+  (it "should extract long list entries into elisp source blocks"
+    (dolist (record
+             (list
+              (list 'annalist-test-map nil (kbd "C-c a")
+                    (lambda (foo)
+                      (/ (- (+ foo (* 1 2 3 4 foo))
+                            5)
+                         foo)))
+              (list 'annalist-test-map nil (kbd "C-c b")
+                    (lambda (foo)
+                      (cl-case foo
+                        (1 foo)
+                        (2 (+ 2 3oo))
+                        (3 foo foo foo foo foo foo))))
+              (list 'annalist-test-map 'operator "o"
+                    '(menu-item
+                      ""
+                      nil
+                      :filter (lambda (&optional _)
+                                (when (memq evil-this-operator
+                                            (list #'evil-delete))
+                                  #'vdiff-receive-changes))))))
+      (annalist-record 'annalist-tester 'keybindings record))
+    (annalist-describe-expect 'annalist-tester 'keybindings)
+    "
+* ~annalist-test-map~
+| Key     | Definition | Previous |
+|---------+------------+----------|
+| =C-c a= | [fn:1]     | ~nil~    |
+| =C-c b= | [fn:2]     | ~nil~    |
+
+[fn:1]
+#+begin_src emacs-lisp
+(closure
+ (t)
+ (foo)
+ (/
+  (- (+ foo (* 1 2 3 4 foo)) 5)
+  foo))
+#+end_src
+
+[fn:2]
+#+begin_src emacs-lisp
+(closure
+ (t)
+ (foo)
+ (cl-case foo
+   (1 foo)
+   (2 (+ 2 3oo))
+   (3 foo foo foo foo foo foo)))
+#+end_src
+
+** Operator
+| Key | Definition | Previous |
+|-----+------------+----------|
+| =o= | [fn:3]     | ~nil~    |
+
+[fn:3]
+#+begin_src emacs-lisp
+(menu-item
+ nil
+ :filter (lambda (&optional _)
+           (when (memq
+                  evil-this-operator
+                  (list #'evil-delete))
+             #'vdiff-receive-changes)))
+#+end_src
+")
+  (describe "should update keybindings to show the prior keybinding (if one)"
+    (it "with `annalist-update-previous-key-definition' as 'on-change"
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'annalist-test-map nil (kbd "C-c a") #'foo))
+      (define-key annalist-test-map (kbd "C-c a") #'foo)
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'annalist-test-map nil (kbd "C-c a") #'bar))
+      (define-key annalist-test-map (kbd "C-c a") #'bar)
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'annalist-test-map nil (kbd "C-c a") #'baz))
+      (define-key annalist-test-map (kbd "C-c a") #'baz)
+      ;; previous shouldn't be overwritten if it is the same
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'annalist-test-map nil (kbd "C-c a") #'baz))
+      (annalist-describe-expect 'annalist-tester 'keybindings
+        "
+* ~annalist-test-map~
+| Key     | Definition | Previous |
+|---------+------------+----------|
+| =C-c a= | ~baz~      | ~bar~    |
+"))
+    (it "with `annalist-update-previous-key-definition' as nil"
+      (let (annalist-update-previous-key-definition)
+        (annalist-record 'annalist-tester 'keybindings
+                         (list 'annalist-test-map nil (kbd "C-c a") #'foo))
+        (define-key annalist-test-map (kbd "C-c a") #'foo)
+        (annalist-record 'annalist-tester 'keybindings
+                         (list 'annalist-test-map nil (kbd "C-c a") #'bar))
+        (define-key annalist-test-map (kbd "C-c a") #'bar)
+        (annalist-record 'annalist-tester 'keybindings
+                         (list 'annalist-test-map nil (kbd "C-c a") #'baz))
+        ;; previous shouldn't change from foo
+        (annalist-describe-expect 'annalist-tester 'keybindings
+          "
+* ~annalist-test-map~
+| Key     | Definition | Previous |
+|---------+------------+----------|
+| =C-c a= | ~baz~      | ~foo~    |
+")))
+    (it "and work with 'global as the keymap"
+      (evil-define-key nil 'global (kbd "C-S-z") #'foo)
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'global nil (kbd "C-S-z") #'bar))
+      (annalist-describe-expect 'annalist-tester 'keybindings
+        "
+* ~global~
+| Key     | Definition | Previous |
+|---------+------------+----------|
+| =C-S-z= | ~bar~      | ~foo~    |
+"))
+    (it "and work with a state and 'global as the keymap"
+      (advice-add 'annalist--preprocess-keybinding :override #'identity)
+      (evil-define-key 'normal 'global (kbd "C-c a") #'foo)
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'global 'normal (kbd "C-c a") #'bar))
+      (annalist-describe-expect 'annalist-tester 'keybindings
+        "
+* ~global~
+** Normal
+| Key     | Definition | Previous |
+|---------+------------+----------|
+| =C-c a= | ~bar~      | ~foo~    |
+")
+      (advice-remove 'annalist--preprocess-keybinding #'identity))
+    (it "and work with a state and 'local as the keymap"
+      (advice-add 'annalist--preprocess-keybinding :override #'identity)
+      (evil-define-key 'normal 'local (kbd "C-c a") #'foo)
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'local 'normal (kbd "C-c a") #'bar)
+                       :local t)
+      (annalist-describe-expect 'annalist-tester 'keybindings
+        "
+* Local
+** ~local~
+*** Normal
+| Key     | Definition | Previous |
+|---------+------------+----------|
+| =C-c a= | ~bar~      | ~foo~    |
+")
+      (advice-remove 'annalist--preprocess-keybinding #'identity))
+    (it "and work with an evil auxiliary keymap"
+      (evil-define-key 'normal annalist-test-map
+        (kbd "C-c a") #'foo)
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'annalist-test-map 'normal (kbd "C-c a") #'bar))
+      (annalist-describe-expect 'annalist-tester 'keybindings
+        "
+* ~annalist-test-map~
+** Normal
+| Key     | Definition | Previous |
+|---------+------------+----------|
+| =C-c a= | ~bar~      | ~foo~    |
+"))
+    (it "and work with an evil minor mode keymap"
+      (evil-define-key 'normal 'annalist-test-mode
+        (kbd "C-c a") #'foo)
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'annalist-test-mode 'normal (kbd "C-c a") #'bar
+                             nil (list :minor-mode t)))
+      (annalist-describe-expect 'annalist-tester 'keybindings
+        "
+* ~annalist-test-mode~
+** Normal
+| Key     | Definition | Previous |
+|---------+------------+----------|
+| =C-c a= | ~bar~      | ~foo~    |
+")))
+  (it "should preprocess \"<state> 'global\" to 'evil-<state>-state-map"
+    (annalist-record 'annalist-tester 'keybindings
+                     (list 'global 'normal (kbd "C-c z") #'foo))
+    (annalist-describe-expect 'annalist-tester 'keybindings)
+    "
+* ~evil-normal-state-map~
+| Key           | Definition | Previous           |
+|---------------+------------+--------------------|
+| =C-c z=       | ~foo~      | ~nil~              |
+")
+  ;; (it "should support local keybindings"
+  ;;   (annalist-record 'annalist-tester 'keybindings
+  ;;                    (list 'annalist-test-map nil "a" #'a))
+  ;;   (with-temp-buffer
+  ;;     (annalist-record 'annalist-tester 'keybindings
+  ;;                      (list 'local 'normal "b" #'b)
+  ;;                      :local t)
+  ;;     (annalist-describe-expect 'annalist-tester 'keybindings)))
+  )
+
+(describe "the annalist keybindings valid view"
+  (before-each
+    (setq annalist-test-map (make-sparse-keymap))
+    (annalist--clear-tester-tome 'keybindings)
+    (setq annalist--local-tomes nil))
+  (it "should only show keybindings for existing states and keymaps \
+(for deferred keybindings)"
+    (dolist (record (list (list 'non-existent-map nil "a" #'a)
+                          (list 'annalist-test-map nil "b" #'b)
+                          (list 'annalist-test-map 'invalid-state "c" #'c)
+                          (list 'annalist-test-map 'normal "d" #'d)))
+      (annalist-record 'annalist-tester 'keybindings record))
+    (annalist-describe-expect 'annalist-tester 'keybindings
+      "
+* ~annalist-test-map~
+| Key | Definition | Previous |
+|-----+------------+----------|
+| =b= | ~b~        | ~nil~    |
+
+** Normal
+| Key | Definition | Previous |
+|-----+------------+----------|
+| =d= | ~d~        | ~nil~    |
+"
+      'valid)))
+
+(describe "the annalist keybindings active view"
+  (before-each
+    (setq annalist-test-map (make-sparse-keymap))
+    (annalist--clear-tester-tome 'keybindings)
+    (setq annalist--local-tomes nil))
+  (it "should only show keybindings for active states/keymaps \
+(states are active if evil is on)"
+    (dolist (record (list (list 'global nil "a" #'a)
+                          (list 'annalist-test-mode-map nil "b" #'b)
+                          (list 'annalist-test-mode-map 'normal "c" #'c)))
+      (annalist-record 'annalist-tester 'keybindings record))
+    (evil-mode -1)
+    (annalist-describe-expect 'annalist-tester 'keybindings
+      "
+* ~global~
+| Key | Definition | Previous              |
+|-----+------------+-----------------------|
+| =a= | ~a~        | ~self-insert-command~ |
+"
+      'active)
+    (annalist-test-mode)
+    (annalist-describe-expect 'annalist-tester 'keybindings
+      "
+* ~global~
+| Key | Definition | Previous              |
+|-----+------------+-----------------------|
+| =a= | ~a~        | ~self-insert-command~ |
+
+* ~annalist-test-mode-map~
+| Key | Definition | Previous |
+|-----+------------+----------|
+| =b= | ~b~        | ~nil~    |
+"
+      'active)
+    (evil-mode)
+    (annalist-describe-expect 'annalist-tester 'keybindings
+      "
+* ~global~
+| Key | Definition | Previous              |
+|-----+------------+-----------------------|
+| =a= | ~a~        | ~self-insert-command~ |
+
+* ~annalist-test-mode-map~
+| Key | Definition | Previous |
+|-----+------------+----------|
+| =b= | ~b~        | ~nil~    |
+
+** Normal
+| Key | Definition | Previous |
+|-----+------------+----------|
+| =c= | ~c~        | ~nil~    |
+")
+    (annalist-test-mode -1)))
+
+;; TODO local
 
 ;;; test-annalist.el ends here
