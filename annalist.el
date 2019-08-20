@@ -522,12 +522,11 @@ those settings for displaying recorded information instead of the defaults."
          (annalist--fn-counter 1))
     ;; NOTE `with-output-to-temp-buffer' does not change the current buffer (so
     ;; it is possible to check active keymaps in a predicate function)
-    (when local-name-store
-      (with-output-to-temp-buffer output-buffer-name
+    (with-output-to-temp-buffer output-buffer-name
+      (when local-name-store
         (princ "* Local\n")
-        (annalist--print-headings local-name-store 0 settings t)))
-    (when name-store
-      (with-output-to-temp-buffer output-buffer-name
+        (annalist--print-headings local-name-store 0 settings t))
+      (when name-store
         (when local-name-store
           (princ "* Global\n"))
         (annalist--print-headings name-store 0 settings local-name-store)))

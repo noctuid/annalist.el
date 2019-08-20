@@ -1321,15 +1321,35 @@ The Lady and the Ten Who Were Taken are unearthed
 |---------------+------------+--------------------|
 | =C-c z=       | ~foo~      | ~nil~              |
 ")
-  ;; (it "should support local keybindings"
-  ;;   (annalist-record 'annalist-tester 'keybindings
-  ;;                    (list 'annalist-test-map nil "a" #'a))
-  ;;   (with-temp-buffer
-  ;;     (annalist-record 'annalist-tester 'keybindings
-  ;;                      (list 'local 'normal "b" #'b)
-  ;;                      :local t)
-  ;;     (annalist-describe-expect 'annalist-tester 'keybindings)))
-  )
+  (it "should support local keybindings"
+    (annalist-record 'annalist-tester 'keybindings
+                     (list 'annalist-test-map nil "a" #'a))
+    (with-temp-buffer
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'local 'normal "b" #'b)
+                       :local t)
+      (annalist-describe-expect 'annalist-tester 'keybindings
+        "
+* Local
+** ~evil-normal-state-local-map~
+| Key | Definition | Previous |
+|-----+------------+----------|
+| =b= | ~b~        | ~nil~    |
+
+* Global
+** ~annalist-test-map~
+| Key | Definition | Previous |
+|-----+------------+----------|
+| =a= | ~a~        | ~nil~    |
+"))
+    ;; local keybindings should not show in a different buffer
+    (annalist-describe-expect 'annalist-tester 'keybindings
+      "
+* ~annalist-test-map~
+| Key | Definition | Previous |
+|-----+------------+----------|
+| =a= | ~a~        | ~nil~    |
+")))
 
 (describe "the annalist keybindings valid view"
   (before-each
@@ -1410,7 +1430,5 @@ The Lady and the Ten Who Were Taken are unearthed
 | =c= | ~c~        | ~nil~    |
 ")
     (annalist-test-mode -1)))
-
-;; TODO local
 
 ;;; test-annalist.el ends here
