@@ -24,10 +24,11 @@
 @top Annalist User Manual
 
 @uref{https://travis-ci.org/noctuid/annalist.el, https://travis-ci.org/noctuid/annalist.el.svg?branch=master}
+
+@samp{annalist.el} is a library that can be used to record information and later print that information using @samp{org-mode} headings and tables. It allows defining different types of things that can be recorded (e.g. keybindings, settings, hooks, and advice) and supports custom filtering, sorting, and formatting. @samp{annalist} is primarily intended for use in other packages like @samp{general} and @samp{evil-collection}, but it can also be used directly in a user's configuration.
 @end ifnottex
 
 @menu
-* About::
 * Usage::
 
 @detailmenu
@@ -63,11 +64,6 @@ Helper Functions
 
 @end detailmenu
 @end menu
-
-@node About
-@chapter About
-
-@samp{annalist.el} is a library that can be used to record information and later print that information using @samp{org-mode} headings and tables. It allows defining different types of things that can be recorded (e.g. keybindings, settings, hooks, and advice) and supports custom filtering, sorting, and formatting. @samp{annalist} is primarily intended for use in other packages like @samp{general} and @samp{evil-collection}, but it can also be used directly in a user's configuration.
 
 @node Usage
 @chapter Usage
@@ -271,7 +267,7 @@ Formatting:
 @node Recording
 @section Recording
 
-@code{annalist-record} is used to record information. It requires three arguments: @samp{annalist} @samp{type} @samp{record}. The @samp{annalist} argument will usually be the same as the package prefix that is recording the data. @samp{'annalist} and any other names prefixed by @samp{'annalist} are reserved for this package. @samp{type} is the type of data to record, and @samp{record} is the actual data. Optionally, the user can also specify metadata that won't be printed after the final item. Buffer-local records should additionally specify @samp{:local t}. Here is an example:
+@code{annalist-record} is used to record information. It requires three arguments: @samp{annalist} @samp{type} @samp{record}. The @samp{annalist} argument will usually be the same as the package prefix that is recording the data. @samp{annalist} and any other names prefixed by @samp{annalist} are reserved for this package. @samp{type} is the type of data to record, and @samp{record} is the actual data. Optionally, the user can also specify metadata that won't be printed after the final item. Buffer-local records should additionally specify @samp{:local t}. Here is an example:
 @lisp
 (annalist-record 'me 'keybindings
                  (list
@@ -338,7 +334,7 @@ It is possible to have custom filtering/sorting behavior by using a custom view:
 @samp{:format} Helpers
 
 
-Annalist provides @code{annalist-verbatim} (e.g. \=verbatim text\=), @code{annalist-code} (e.g. \~my-function\~), and @code{annalist-capitalize}. There is also an @code{annalist-compose} helper for combining different formatting functions.
+Annalist provides @code{annalist-verbatim} (e.g. @code{=verbatim text=}), @code{annalist-code} (e.g. @samp{~my-function~}), and @code{annalist-capitalize}. There is also an @code{annalist-compose} helper for combining different formatting functions.
 
 @item
 Formatting Emacs Lisp Source Blocks

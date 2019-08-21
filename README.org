@@ -9,11 +9,9 @@
 
 [[https://travis-ci.org/noctuid/annalist.el][https://travis-ci.org/noctuid/annalist.el.svg?branch=master]]
 
-* About
 =annalist.el= is a library that can be used to record information and later print that information using =org-mode= headings and tables. It allows defining different types of things that can be recorded (e.g. keybindings, settings, hooks, and advice) and supports custom filtering, sorting, and formatting. =annalist= is primarily intended for use in other packages like =general= and =evil-collection=, but it can also be used directly in a user's configuration.
 
 * Table of Contents :noexport:TOC:
-- [[#about][About]]
 - [[#usage][Usage]]
   - [[#disabling-annalist][Disabling Annalist]]
   - [[#terminology][Terminology]]
@@ -154,7 +152,7 @@ Formatting:
 - =:src-block-p= function to determine whether to extract to a source block when the =:extractp= function returns non-nil (default: ~listp~)
 
 ** Recording
-~annalist-record~ is used to record information. It requires three arguments: =annalist= =type= =record=. The =annalist= argument will usually be the same as the package prefix that is recording the data. ='annalist= and any other names prefixed by ='annalist= are reserved for this package. =type= is the type of data to record, and =record= is the actual data. Optionally, the user can also specify metadata that won't be printed after the final item. Buffer-local records should additionally specify =:local t=. Here is an example:
+~annalist-record~ is used to record information. It requires three arguments: =annalist= =type= =record=. The =annalist= argument will usually be the same as the package prefix that is recording the data. =annalist= and any other names prefixed by =annalist= are reserved for this package. =type= is the type of data to record, and =record= is the actual data. Optionally, the user can also specify metadata that won't be printed after the final item. Buffer-local records should additionally specify =:local t=. Here is an example:
 #+begin_src emacs-lisp
 (annalist-record 'me 'keybindings
                  (list
@@ -203,7 +201,7 @@ It is possible to have custom filtering/sorting behavior by using a custom view:
 
 *** Formatting Helpers
 **** =:format= Helpers
-Annalist provides ~annalist-verbatim~ (e.g. \=verbatim text\=), ~annalist-code~ (e.g. \~my-function\~), and ~annalist-capitalize~. There is also an ~annalist-compose~ helper for combining different formatting functions.
+Annalist provides ~annalist-verbatim~ (e.g. ~=verbatim text=~), ~annalist-code~ (e.g. =~my-function~=), and ~annalist-capitalize~. There is also an ~annalist-compose~ helper for combining different formatting functions.
 
 **** Formatting Emacs Lisp Source Blocks
 By default, Emacs Lisp extracted into source blocks will just be one long line. You can add ~annalist-multiline-source-blocks~ to a view's =:hooks= keyword or to =annalist-describe-hook= to autoformat org source blocks if lispy is installed. By default, it uses ~lispy-alt-multiline~. To use ~lispy-multiline~ instead, customize ~annalist-multiline-function~.
