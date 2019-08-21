@@ -532,7 +532,7 @@ My brother unforgiven
 | Windy Country |
 | Charm         |
 "))
-  ;; 
+  ;; `sxhash-eq' doesn't exist in older versions
   (when (>= emacs-major-version 26)
     (it "should be used for comparing heading items with a user-defined test"
       (define-hash-table-test 'annalist-test-eq
@@ -1091,10 +1091,69 @@ The Lady and the Ten Who Were Taken are unearthed
       'alternate)))
 
 ;; * Annalist Record
-;; TODO test recording with plist instead of list
-;; TODO test that records keep order they are recorded in (and how updating a
-;;      record affects the order)
-;; TODO test local recording and describing
+(describe "annalist-record"
+  (it "should support recording a plist instead of an ordered list"
+    (annalist-test-tome-setup :records nil)
+    (annalist-record 'annalist-tester 'annalist-test
+                     (list 'event "Beginning of the Domination"
+                           'location "Northern Continent"
+                           'year 0)
+                     :plist t)
+    (annalist-describe-expect 'annalist-tester 'annalist-test
+      "
+| Year | Event                       | Location           |
+|------+-----------------------------+--------------------|
+|    0 | Beginning of the Domination | Northern Continent |
+"))
+  (it "should record records so that they are printed starting with the least \
+recently updated"
+    (annalist-test-tome-setup)
+    (annalist-record 'annalist-tester 'annalist-test
+                     '(0 "Domination begins" "Northern Continent"))
+    (annalist-describe-expect 'annalist-tester 'annalist-test
+      "
+|  Year | Event                                             | Location           |
+|-------+---------------------------------------------------+--------------------|
+|   559 | The Siege of Dejagore begins                      | Southern Continent |
+| -1442 | Temple of Traveller's Repose is founded           | Southern Continent |
+|     0 | Beginning of the Domination                       | Northern Continent |
+|   470 | Tenth return of the Great Comet                   | Outer Space        |
+|   470 | The Lady and the Ten Who Were Taken are unearthed | Northern Continent |
+|     0 | Domination begins                                 | Northern Continent |
+"))
+  (it "should support buffer-local records"
+    (annalist-test-tome-setup)
+    (with-temp-buffer
+      (annalist-record 'annalist-tester 'annalist-test
+                       '(555 "The Company enters the Plain of Fear"
+                             "Northern Continent")
+                       :local t)
+      (annalist-describe-expect 'annalist-tester 'annalist-test
+        "
+* Local
+| Year | Event                                | Location           |
+|------+--------------------------------------+--------------------|
+|  555 | The Company enters the Plain of Fear | Northern Continent |
+
+* Global
+|  Year | Event                                             | Location           |
+|-------+---------------------------------------------------+--------------------|
+|   559 | The Siege of Dejagore begins                      | Southern Continent |
+| -1442 | Temple of Traveller's Repose is founded           | Southern Continent |
+|     0 | Beginning of the Domination                       | Northern Continent |
+|   470 | Tenth return of the Great Comet                   | Outer Space        |
+|   470 | The Lady and the Ten Who Were Taken are unearthed | Northern Continent |
+"))
+    (annalist-describe-expect 'annalist-tester 'annalist-test
+      "
+|  Year | Event                                             | Location           |
+|-------+---------------------------------------------------+--------------------|
+|   559 | The Siege of Dejagore begins                      | Southern Continent |
+| -1442 | Temple of Traveller's Repose is founded           | Southern Continent |
+|     0 | Beginning of the Domination                       | Northern Continent |
+|   470 | Tenth return of the Great Comet                   | Outer Space        |
+|   470 | The Lady and the Ten Who Were Taken are unearthed | Northern Continent |
+")))
 
 ;; * Builtin Types
 ;; ** Keybindings Type
