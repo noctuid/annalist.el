@@ -40,6 +40,12 @@
   :group 'convenience
   :prefix "annalist-")
 
+(defcustom annalist-record t
+  "Whether function `annalist-record' should do anything.
+Set this to nil if you never use `annalist-describe' and want to shave some
+milliseconds off of your init time."
+  :type 'boolean)
+
 (defcustom annalist-describe-hook nil
   "Hook run in the description buffer after it has been populated.
 The buffer is editable when this hook is run."
@@ -358,21 +364,22 @@ list of items to record and later print as org headings and column entries in a
 single row. If PLIST is non-nil, RECORD should be a plist instead of an ordered
 list (e.g. '(keymap org-mode-map key \"C-c a\" ...)). The plist keys should be
 the symbols used for the definition of TYPE."
-  (let* ((tome (annalist--tome type local))
-         (settings (annalist--get-tome-settings type))
-         (preprocess (plist-get settings :preprocess))
-         (store (gethash annalist tome))
-         (num-unspecified-items (- (plist-get settings :metadata-index)
-                                   (1- (length record)))))
-    (when plist
-      (setq record (annalist-listify-record record type)))
-    (when preprocess
-      (setq record (funcall preprocess record)))
-    (unless (<= num-unspecified-items 0)
-      (setq record (nconc record (make-list num-unspecified-items nil))))
-    (puthash annalist
-             (annalist--record-headings record store 0 settings)
-             tome)))
+  (when annalist-record
+    (let* ((tome (annalist--tome type local))
+           (settings (annalist--get-tome-settings type))
+           (preprocess (plist-get settings :preprocess))
+           (store (gethash annalist tome))
+           (num-unspecified-items (- (plist-get settings :metadata-index)
+                                     (1- (length record)))))
+      (when plist
+        (setq record (annalist-listify-record record type)))
+      (when preprocess
+        (setq record (funcall preprocess record)))
+      (unless (<= num-unspecified-items 0)
+        (setq record (nconc record (make-list num-unspecified-items nil))))
+      (puthash annalist
+               (annalist--record-headings record store 0 settings)
+               tome))))
 
 ;; * Printing
 (defun annalist--safe-pipe (item)
@@ -674,7 +681,7 @@ unbound/nil."
   "Update a \"previous\" value for something.
 OLD-VAL is the currently stored \"previous\" value. CURRENT-VAL is the actual
 current value for the thing (which could potentially be different from the
-stored current value if not all functions that change the thing call
+stored current value if not all functions that change the thing call function
 `annalist-record'). NEW-VAL is the new value that the thing will be changed to.
 TEST is the test to used to compare values (or `equal'). If there is no OlD-VAL
 or if NEW-VAL is still equal to CURRENT-VAL and

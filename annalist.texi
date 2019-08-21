@@ -35,6 +35,7 @@
 
 Usage
 
+* Disabling Annalist::
 * Terminology::
 * Settings::
 * Defining New Types::
@@ -72,6 +73,7 @@ Helper Functions
 @chapter Usage
 
 @menu
+* Disabling Annalist::
 * Terminology::
 * Settings::
 * Defining New Types::
@@ -80,6 +82,16 @@ Helper Functions
 * Describing::
 * Helper Functions::
 @end menu
+
+@node Disabling Annalist
+@section Disabling Annalist
+
+@quotation
+What fool always has his nose in everywhere because he thinks he has to know so he can record it in his precious Annals?
+
+@end quotation
+
+If you use a library that uses @samp{annalist} (e.g. @samp{evil-collection} or @samp{general}) but don't need it's functionality during init or at all, you can set @samp{annalist-record} to nil to shave some milliseconds off of your init time (especially if you have a lot of keybindings). Alternatively, if you want to prevent @samp{annalist} from even loading, you can set the relevant packages' variables to nil (e.g. @samp{general-annalist-record}).
 
 @node Terminology
 @section Terminology
@@ -259,7 +271,7 @@ Formatting:
 @node Recording
 @section Recording
 
-@code{annalist-record} is used to record information. It requires three arguments: @samp{annalist} @samp{type} @samp{record}. The @samp{annalist} argument will usually be the same as the package prefix that is recording the data. @samp{'annalist} is reserved for this package. @samp{type} is the type of data to record, and @samp{record} is the actual data. Optionally, the user can also specify metadata that won't be printed after the final item. Buffer-local records should additionally specify @samp{:local t}. Here is an example:
+@code{annalist-record} is used to record information. It requires three arguments: @samp{annalist} @samp{type} @samp{record}. The @samp{annalist} argument will usually be the same as the package prefix that is recording the data. @samp{'annalist} and any other names prefixed by @samp{'annalist} are reserved for this package. @samp{type} is the type of data to record, and @samp{record} is the actual data. Optionally, the user can also specify metadata that won't be printed after the final item. Buffer-local records should additionally specify @samp{:local t}. Here is an example:
 @lisp
 (annalist-record 'me 'keybindings
                  (list

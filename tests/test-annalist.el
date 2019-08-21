@@ -1092,6 +1092,12 @@ The Lady and the Ten Who Were Taken are unearthed
 
 ;; * Annalist Record
 (describe "annalist-record"
+  (it "should do nothing if variable `annalist-record' is nil"
+    (let (annalist-record)
+      (annalist-test-tome-setup)
+      (annalist-describe-expect 'annalist-tester 'annalist-test "
+
+")))
   (it "should support recording a plist instead of an ordered list"
     (annalist-test-tome-setup :records nil)
     (annalist-record 'annalist-tester 'annalist-test

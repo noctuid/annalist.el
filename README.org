@@ -15,6 +15,7 @@
 * Table of Contents :noexport:TOC:
 - [[#about][About]]
 - [[#usage][Usage]]
+  - [[#disabling-annalist][Disabling Annalist]]
   - [[#terminology][Terminology]]
   - [[#settings][Settings]]
   - [[#defining-new-types][Defining New Types]]
@@ -34,6 +35,13 @@
     - [[#sorting-helpers][Sorting Helpers]]
 
 * Usage
+** Disabling Annalist
+#+begin_quote
+What fool always has his nose in everywhere because he thinks he has to know so he can record it in his precious Annals?
+#+end_quote
+
+If you use a library that uses =annalist= (e.g. =evil-collection= or =general=) but don't need it's functionality during init or at all, you can set =annalist-record= to nil to shave some milliseconds off of your init time (especially if you have a lot of keybindings). Alternatively, if you want to prevent =annalist= from even loading, you can set the relevant packages' variables to nil (e.g. =general-annalist-record=).
+
 ** Terminology
 - item - and individual recorded item; may be displayed as a heading or as a table column entry (e.g. a key such as =C-c=)
 - record - a list of related, printable items corresponding to one piece of information (e.g. a single keybinding: a list of a keymap, key, and definition)
