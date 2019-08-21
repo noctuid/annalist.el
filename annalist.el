@@ -738,7 +738,7 @@ actually defined (e.g. keybindings may be deferred until the keymap exists).
 
 (defvar evil-local-mode)
 (defun annalist--valid-state-and-evil-on-p (state)
-  "Return whether STATE is valid `evil-local-mode' is on."
+  "Return whether STATE is valid and variable `evil-local-mode' is non-nil."
   (or (null state)
       (and (annalist--valid-state-p state) evil-local-mode)))
 

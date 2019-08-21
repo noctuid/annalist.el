@@ -136,8 +136,8 @@ default view."
 
 (describe "annalist-compose"
   (it "should be capable of composing formatting functions"
-    (expect (funcall (annalist-compose #'annalist-verbatim
-                                       #'annalist-capitalize)
+    (expect (funcall (annalist-compose 'annalist-verbatim
+                                       'annalist-capitalize)
                      "the annals")
             :to-equal "=The Annals=")))
 
@@ -155,9 +155,9 @@ default view."
 ;; ** Source Block Formatting
 (describe "annalist-multiline-source-blocks"
   (before-all
-    (add-hook 'emacs-lisp-mode-hook #'annalist-no-tabs))
+    (add-hook 'emacs-lisp-mode-hook 'annalist-no-tabs))
   (after-all
-    (remove-hook 'emacs-lisp-mode-hook #'annalist-no-tabs))
+    (remove-hook 'emacs-lisp-mode-hook 'annalist-no-tabs))
   (it "should format all emacs lisp source blocks with `lispy-multiline'"
     (expect
      (with-temp-buffer
@@ -176,7 +176,7 @@ default view."
 #+end_src
 
 #+begin_src emacs-lisp
-(annalist-define-view 'keybindings 'my-view '(:defaults (:format #'capitalize) (key :format #'annalist-verbatim) (definition :format nil)))
+(annalist-define-view 'keybindings 'my-view '(:defaults (:format 'capitalize) (key :format 'annalist-verbatim) (definition :format nil)))
 #+end_src
 ")
        (annalist-multiline-source-blocks)
@@ -214,9 +214,9 @@ default view."
 (annalist-define-view
     'keybindings
     'my-view
-  '(:defaults (:format #'capitalize)
+  '(:defaults (:format 'capitalize)
               (key
-               :format #'annalist-verbatim)
+               :format 'annalist-verbatim)
               (definition :format nil)))
 #+end_src
 ")))
@@ -338,7 +338,7 @@ It concatenates the locations from OLD-RECORD and NEW-RECORD."
 (describe "The :record-update keyword"
   (it "should allow updating previously existing records with a function"
     (annalist-test-tome-setup
-     :record-update #'annalist-test-record-update
+     :record-update 'annalist-test-record-update
      :records '((0 "foo" "bar")
                 (0 "foo" "baz")
                 (0 "foo" "qux")))
@@ -357,7 +357,7 @@ It concatenates the locations from OLD-RECORD and NEW-RECORD."
 (describe "The :preprocess keyword"
   (it "should allow changing a record before recording it"
     (annalist-test-tome-setup
-     :preprocess #'annalist-test-preprocess
+     :preprocess 'annalist-test-preprocess
      :records '((0 "foo" "location")))
     (annalist-describe-expect 'annalist-tester 'annalist-test
       "
@@ -1165,9 +1165,9 @@ recently updated"
     (annalist--clear-tester-tome 'keybindings)
     (setq annalist--local-tomes nil))
   (it "should have the expected formatting and titles"
-    (dolist (record (list (list 'annalist-test-map nil (kbd "C-c a") #'foo)
-                          (list 'annalist-test-map nil (kbd "C-c b") #'bar)
-                          (list 'annalist-test-map 'normal "c" #'baz)))
+    (dolist (record (list (list 'annalist-test-map nil (kbd "C-c a") 'foo)
+                          (list 'annalist-test-map nil (kbd "C-c b") 'bar)
+                          (list 'annalist-test-map 'normal "c" 'baz)))
       (annalist-record 'annalist-tester 'keybindings record))
     (annalist-describe-expect 'annalist-tester 'keybindings
       "
@@ -1186,7 +1186,7 @@ recently updated"
     (dolist (record
              (list
               (list 'annalist-test-map nil (kbd "C-c a")
-                    #'foo-bar-baz-qux-quux-quuz-corge-grault-garply-waldo)))
+                    'foo-bar-baz-qux-quux-quuz-corge-grault-garply-waldo)))
       (annalist-record 'annalist-tester 'keybindings record))
     (annalist-describe-expect 'annalist-tester 'keybindings
       "
@@ -1207,7 +1207,7 @@ recently updated"
                     (lambda (foo)
                       (cl-case foo
                         (1 foo)
-                        (2 (+ 2 3oo))
+                        (2 (+ 2 foo))
                         (3 foo foo foo foo foo foo))))
               (list 'annalist-test-map 'operator "o"
                     '(menu-item
@@ -1266,17 +1266,17 @@ recently updated"
   (describe "should update keybindings to show the prior keybinding (if one)"
     (it "with `annalist-update-previous-key-definition' as 'on-change"
       (annalist-record 'annalist-tester 'keybindings
-                       (list 'annalist-test-map nil (kbd "C-c a") #'foo))
-      (define-key annalist-test-map (kbd "C-c a") #'foo)
+                       (list 'annalist-test-map nil (kbd "C-c a") 'foo))
+      (define-key annalist-test-map (kbd "C-c a") 'foo)
       (annalist-record 'annalist-tester 'keybindings
-                       (list 'annalist-test-map nil (kbd "C-c a") #'bar))
-      (define-key annalist-test-map (kbd "C-c a") #'bar)
+                       (list 'annalist-test-map nil (kbd "C-c a") 'bar))
+      (define-key annalist-test-map (kbd "C-c a") 'bar)
       (annalist-record 'annalist-tester 'keybindings
-                       (list 'annalist-test-map nil (kbd "C-c a") #'baz))
-      (define-key annalist-test-map (kbd "C-c a") #'baz)
+                       (list 'annalist-test-map nil (kbd "C-c a") 'baz))
+      (define-key annalist-test-map (kbd "C-c a") 'baz)
       ;; previous shouldn't be overwritten if it is the same
       (annalist-record 'annalist-tester 'keybindings
-                       (list 'annalist-test-map nil (kbd "C-c a") #'baz))
+                       (list 'annalist-test-map nil (kbd "C-c a") 'baz))
       (annalist-describe-expect 'annalist-tester 'keybindings
         "
 * ~annalist-test-map~
@@ -1287,13 +1287,13 @@ recently updated"
     (it "with `annalist-update-previous-key-definition' as nil"
       (let (annalist-update-previous-key-definition)
         (annalist-record 'annalist-tester 'keybindings
-                         (list 'annalist-test-map nil (kbd "C-c a") #'foo))
-        (define-key annalist-test-map (kbd "C-c a") #'foo)
+                         (list 'annalist-test-map nil (kbd "C-c a") 'foo))
+        (define-key annalist-test-map (kbd "C-c a") 'foo)
         (annalist-record 'annalist-tester 'keybindings
-                         (list 'annalist-test-map nil (kbd "C-c a") #'bar))
-        (define-key annalist-test-map (kbd "C-c a") #'bar)
+                         (list 'annalist-test-map nil (kbd "C-c a") 'bar))
+        (define-key annalist-test-map (kbd "C-c a") 'bar)
         (annalist-record 'annalist-tester 'keybindings
-                         (list 'annalist-test-map nil (kbd "C-c a") #'baz))
+                         (list 'annalist-test-map nil (kbd "C-c a") 'baz))
         ;; previous shouldn't change from foo
         (annalist-describe-expect 'annalist-tester 'keybindings
           "
@@ -1303,9 +1303,9 @@ recently updated"
 | =C-c a= | ~baz~      | ~foo~    |
 ")))
     (it "and work with 'global as the keymap"
-      (evil-define-key nil 'global (kbd "C-S-z") #'foo)
+      (evil-define-key nil 'global (kbd "C-S-z") 'foo)
       (annalist-record 'annalist-tester 'keybindings
-                       (list 'global nil (kbd "C-S-z") #'bar))
+                       (list 'global nil (kbd "C-S-z") 'bar))
       (annalist-describe-expect 'annalist-tester 'keybindings
         "
 * ~global~
@@ -1315,9 +1315,9 @@ recently updated"
 "))
     (it "and work with a state and 'global as the keymap"
       (advice-add 'annalist--preprocess-keybinding :override #'identity)
-      (evil-define-key 'normal 'global (kbd "C-c a") #'foo)
+      (evil-define-key 'normal 'global (kbd "C-c a") 'foo)
       (annalist-record 'annalist-tester 'keybindings
-                       (list 'global 'normal (kbd "C-c a") #'bar))
+                       (list 'global 'normal (kbd "C-c a") 'bar))
       (annalist-describe-expect 'annalist-tester 'keybindings
         "
 * ~global~
@@ -1329,9 +1329,9 @@ recently updated"
       (advice-remove 'annalist--preprocess-keybinding #'identity))
     (it "and work with a state and 'local as the keymap"
       (advice-add 'annalist--preprocess-keybinding :override #'identity)
-      (evil-define-key 'normal 'local (kbd "C-c a") #'foo)
+      (evil-define-key 'normal 'local (kbd "C-c a") 'foo)
       (annalist-record 'annalist-tester 'keybindings
-                       (list 'local 'normal (kbd "C-c a") #'bar)
+                       (list 'local 'normal (kbd "C-c a") 'bar)
                        :local t)
       (annalist-describe-expect 'annalist-tester 'keybindings
         "
@@ -1345,9 +1345,9 @@ recently updated"
       (advice-remove 'annalist--preprocess-keybinding #'identity))
     (it "and work with an evil auxiliary keymap"
       (evil-define-key 'normal annalist-test-map
-        (kbd "C-c a") #'foo)
+        (kbd "C-c a") 'foo)
       (annalist-record 'annalist-tester 'keybindings
-                       (list 'annalist-test-map 'normal (kbd "C-c a") #'bar))
+                       (list 'annalist-test-map 'normal (kbd "C-c a") 'bar))
       (annalist-describe-expect 'annalist-tester 'keybindings
         "
 * ~annalist-test-map~
@@ -1358,9 +1358,9 @@ recently updated"
 "))
     (it "and work with an evil minor mode keymap"
       (evil-define-key 'normal 'annalist-test-mode
-        (kbd "C-c a") #'foo)
+        (kbd "C-c a") 'foo)
       (annalist-record 'annalist-tester 'keybindings
-                       (list 'annalist-test-mode 'normal (kbd "C-c a") #'bar
+                       (list 'annalist-test-mode 'normal (kbd "C-c a") 'bar
                              nil (list :minor-mode t)))
       (annalist-describe-expect 'annalist-tester 'keybindings
         "
@@ -1372,7 +1372,7 @@ recently updated"
 ")))
   (it "should preprocess \"<state> 'global\" to 'evil-<state>-state-map"
     (annalist-record 'annalist-tester 'keybindings
-                     (list 'global 'normal (kbd "C-c z") #'foo))
+                     (list 'global 'normal (kbd "C-c z") 'foo))
     (annalist-describe-expect 'annalist-tester 'keybindings)
     "
 * ~evil-normal-state-map~
@@ -1382,10 +1382,10 @@ recently updated"
 ")
   (it "should support local keybindings"
     (annalist-record 'annalist-tester 'keybindings
-                     (list 'annalist-test-map nil "a" #'a))
+                     (list 'annalist-test-map nil "a" 'a))
     (with-temp-buffer
       (annalist-record 'annalist-tester 'keybindings
-                       (list 'local 'normal "b" #'b)
+                       (list 'local 'normal "b" 'b)
                        :local t)
       (annalist-describe-expect 'annalist-tester 'keybindings
         "
@@ -1417,10 +1417,10 @@ recently updated"
     (setq annalist--local-tomes nil))
   (it "should only show keybindings for existing states and keymaps \
 (for deferred keybindings)"
-    (dolist (record (list (list 'non-existent-map nil "a" #'a)
-                          (list 'annalist-test-map nil "b" #'b)
-                          (list 'annalist-test-map 'invalid-state "c" #'c)
-                          (list 'annalist-test-map 'normal "d" #'d)))
+    (dolist (record (list (list 'non-existent-map nil "a" 'a)
+                          (list 'annalist-test-map nil "b" 'b)
+                          (list 'annalist-test-map 'invalid-state "c" 'c)
+                          (list 'annalist-test-map 'normal "d" 'd)))
       (annalist-record 'annalist-tester 'keybindings record))
     (annalist-describe-expect 'annalist-tester 'keybindings
       "
@@ -1443,9 +1443,9 @@ recently updated"
     (setq annalist--local-tomes nil))
   (it "should only show keybindings for active states/keymaps \
 (states are active if evil is on)"
-    (dolist (record (list (list 'global nil "a" #'a)
-                          (list 'annalist-test-mode-map nil "b" #'b)
-                          (list 'annalist-test-mode-map 'normal "c" #'c)))
+    (dolist (record (list (list 'global nil "a" 'a)
+                          (list 'annalist-test-mode-map nil "b" 'b)
+                          (list 'annalist-test-mode-map 'normal "c" 'c)))
       (annalist-record 'annalist-tester 'keybindings record))
     (evil-mode -1)
     (annalist-describe-expect 'annalist-tester 'keybindings
