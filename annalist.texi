@@ -44,6 +44,7 @@ Usage
 * Recording::
 * Describing::
 * Helper Functions::
+* Builtin Types::
 
 Defining New Types
 
@@ -62,6 +63,10 @@ Helper Functions
 * Formatting Helpers::
 * Sorting Helpers::
 
+Builtin Types
+
+* Keybindings Type::
+
 @end detailmenu
 @end menu
 
@@ -77,6 +82,7 @@ Helper Functions
 * Recording::
 * Describing::
 * Helper Functions::
+* Builtin Types::
 @end menu
 
 @node Disabling Annalist
@@ -351,5 +357,23 @@ The builtin types have @code{annlist-multiline-source-blocks} in their @samp{:ho
 @subsection Sorting Helpers
 
 Annalist provides @code{annalist-string-<} and @code{annalist-key-<} (e.g. @code{(kbd "C-c a")} vs @code{(kbd "C-c b")}).
+
+@node Builtin Types
+@section Builtin Types
+
+@menu
+* Keybindings Type::
+@end menu
+
+@node Keybindings Type
+@subsection Keybindings Type
+
+Annalist provides a type for recording keybindings that is used by @samp{evil-collection} and @samp{general}. When recording a keybinding, the keymap must be provided as a symbol. Here is an example:
+@lisp
+(annalist-record 'annalist 'keybindings
+                 (list 'org-mode-map nil (kbd "C-c g") #'counsel-org-goto))
+@end lisp
+
+In addition to the default view, it has a @samp{valid} to only show keybindings for keymaps/states that exist (since some keybindings may be in a @code{with-eval-after-load}). It also has an @samp{active} view to only show keybindings that are currently active.
 
 @bye

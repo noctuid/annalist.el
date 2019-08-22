@@ -31,6 +31,8 @@
       - [[#format-helpers][=:format= Helpers]]
       - [[#formatting-emacs-lisp-source-blocks][Formatting Emacs Lisp Source Blocks]]
     - [[#sorting-helpers][Sorting Helpers]]
+  - [[#builtin-types][Builtin Types]]
+    - [[#keybindings-type][Keybindings Type]]
 
 * Usage
 ** Disabling Annalist
@@ -216,3 +218,14 @@ Annalist provides ~annalist-string-<~ and ~annalist-key-<~ (e.g. ~(kbd "C-c a")~
 # Local Variables:
 # toc-org-max-depth: 4
 # End:
+
+
+** Builtin Types
+*** Keybindings Type
+Annalist provides a type for recording keybindings that is used by =evil-collection= and =general=. When recording a keybinding, the keymap must be provided as a symbol. Here is an example:
+#+begin_src emacs-lisp
+(annalist-record 'annalist 'keybindings
+                 (list 'org-mode-map nil (kbd "C-c g") #'counsel-org-goto))
+#+end_src
+
+In addition to the default view, it has a =valid= to only show keybindings for keymaps/states that exist (since some keybindings may be in a ~with-eval-after-load~). It also has an =active= view to only show keybindings that are currently active.
