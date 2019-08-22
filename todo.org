@@ -1,64 +1,32 @@
 #+TODO: TODO(t) MAYBE(m) IN-PROGRESS(p) WAITING(w) | DONE(d) CANCELED(c)
 
-* Most Important (before initial release)
-** DONE correctly handle item vs default settings
-CLOSED: [2019-07-29 Mon 18:49]
-
-** TODO Add tests coverying at least the basics and all keywords at all levels
-*** TODO Test plist merging
-*** TODO Check if duplicate recording/record deletion still happens
-*** TODO Check that local keybinding recording/displaying works as expected
-** TODO Add function (that can be added to hook) to multiline src block entries with lispy
-** DONE Add functions to convert between plist and ordered records
-CLOSED: [2019-07-29 Mon 20:01]
-- Add argument to allow recording using plist (with metadata as arg to =t= for example)
-- Mention in readme that could use this function to convert new-record or old-record to a plist; (plist-get 'key new-record) is more readable than (nth <n> new-record)
-
-** DONE Allow preprocessing
-CLOSED: [2019-07-29 Mon 20:34]
-For example, to handle ='normal 'global= and =='evil-normal-state-map nil= (which are actually the same)
-
-also
-If `evil-collection-define-key` starts to wrap `evil-define-minor-mode`
-if evil-collection starts using general.el, it will already do this
-
-** TODO Double check that all general.el and evil-collection functionality is present
-** TODO Add quotes to readme
-** TODO Put helper functions in readme
-** TODO update evil-collection PR
-(eval-when-compile (require 'subr-x)) (also probably no longer necessary in evil-collection)
-
-test evil-collectin output
-
-** TODO Specify actual org version in dependencies
-maybe ask on melpa
-
 * Important (but after melpa)
+** TODO More builtin types (settings, hooks, and advice)
 ** TODO Todos in annalist.el
 *** TODO option to do newest to oldest
+for both headings and table
+
+default is oldest to newest
+
 *** TODO delete empty tables then headings
 *** TODO handle active map check for minor mode def
-** TODO Escaping = and ~ for verbatim and code?
-Or don't use verbatim and code?
-
-** TODO More builtin types (settings, hooks, and advice)
-** MAYBE Remove :test if possible
-This is something that should work automatically
-probably okay to keep
-
-if don't, add disclaimer about hash table test
-must define tests
+*** TODO ellipsis alignment issue
+*** TODO missing tests
+** TODO support multiline table format as alternative to extraction
+** MAYBE Escaping = and ~ for verbatim and code?
+Org actually seems to handle this fine.
 
 * Minor (after melpa)
+** TODO indent function issues
+either set to custom indent function in test file or stop using custom indent function
+
+** TODO Get undercover.el working (hangs)
+** TODO print message if no records
 ** TODO Allow custom truncation
 e.g. lambda to (lambda () …) like in evil-collection
 
 ** TODO Allow adding extra entries on display (calculated entries)
 ** MAYBE =:package= inference for keybindings if :package not present (based on prefix)
-** MAYBE maybe a keyword similar to :update but before printing
-what was the use case for this
-
-** MAYBE Allow for custom org showall setting?
 ** MAYBE Customizable display buffer name?
 Like in evil-collection currently. I'm not sure if there would be a reason to change the name.
 
