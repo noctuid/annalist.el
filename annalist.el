@@ -2,8 +2,8 @@
 
 ;; Author: Fox Kiester <noct@posteo.net>
 ;; URL: https://github.com/noctuid/annalist.el
-;; Keywords: convenience, tools, keybindings
-;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (org "0"))
+;; Keywords: convenience, tools, keybindings, org
+;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; Version: 0.1
 
 ;; This file is not part of GNU Emacs.
