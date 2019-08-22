@@ -9,6 +9,16 @@
 
 [[https://travis-ci.org/noctuid/annalist.el][https://travis-ci.org/noctuid/annalist.el.svg?branch=master]]
 
+#+begin_quote
+Incessant wind sweeps the plain. It murmurs on across grey stone, carrying dust from far climes to nibble eternally at the memorial pillars. There are a few shadows out there still but they are the weak and the timid and the hopelessly lost.
+
+It is immortality of a sort.
+
+Memory is immortality of a sort.
+
+In the night, when the wind dies and silence rules the place of glittering stone, I remember. And they all live again.
+#+end_quote
+
 =annalist.el= is a library that can be used to record information and later print that information using =org-mode= headings and tables. It allows defining different types of things that can be recorded (e.g. keybindings, settings, hooks, and advice) and supports custom filtering, sorting, and formatting. =annalist= is primarily intended for use in other packages like =general= and =evil-collection=, but it can also be used directly in a user's configuration.
 
 * Table of Contents :noexport:TOC:
@@ -56,6 +66,10 @@ Annalist provides =annalist-describe-hook= which is run in annalist description 
 #+end_src
 
 ** Defining New Types
+#+begin_quote
+Three huge tomes bound in worn, cracked dark leather rested on a large, long stone lectern, as though waiting for three speakers to step up and read at the same time.
+#+end_quote
+
 Annalist provides the function ~annalist-define-tome~ for defining new types of tomes:
 #+begin_src emacs-lisp
 (annalist-define-tome 'battles
@@ -101,6 +115,10 @@ The settings plist past to the =:record-update= function contains all informatio
 #+end_src
 
 ** Defining Views
+#+begin_quote
+In those days the company was in service to…
+#+end_quote
+
 Views contain settings for formatting and displaying recorded information. Settings from the type definition cannot be changed later. On the other hand, views are for all settings that a user may want to change for a particular ~annalist-describe~ call. They are defined using the same format as tome types:
 #+begin_src emacs-lisp
 (annalist-define-view 'battles 'default
@@ -155,6 +173,12 @@ Formatting:
 - =:src-block-p= function to determine whether to extract to a source block when the =:extractp= function returns non-nil (default: ~listp~)
 
 ** Recording
+#+begin_quote
+The Lady said, “I wanted you to see this, Annalist.”
+[…]
+“What is about to transpire. So that it is properly recorded in at least one place.”
+#+end_quote
+
 ~annalist-record~ is used to record information. It requires three arguments: =annalist= =type= =record=. The =annalist= argument will usually be the same as the package prefix that is recording the data. =annalist= and any other names prefixed by =annalist= are reserved for this package. =type= is the type of data to record, and =record= is the actual data. Optionally, the user can also specify metadata that won't be printed after the final item. Buffer-local records should additionally specify =:local t=. Here is an example:
 #+begin_src emacs-lisp
 (annalist-record 'me 'keybindings
@@ -179,6 +203,10 @@ Formatting:
 Some items can potentially be recorded as nil. In the previous example, the evil =state= is recorded as nil (which will always be the case for non-evil users). When a heading item is nil, the heading at that level will just be skipped/not printed.
 
 ** Describing
+#+begin_quote
+Once each month, in the evening, the entire Company assembles so the Annalist can read from his predecessors.
+#+end_quote
+
 ~annalist-describe~ is used to describe information. It takes three arguments: =name= =type view=. =view= is optional (defaults to =default=). For example:
 #+begin_src emacs-lisp
 (annalist-describe 'me 'keybindings)

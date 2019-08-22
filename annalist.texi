@@ -25,6 +25,17 @@
 
 @uref{https://travis-ci.org/noctuid/annalist.el, https://travis-ci.org/noctuid/annalist.el.svg?branch=master}
 
+@quotation
+Incessant wind sweeps the plain. It murmurs on across grey stone, carrying dust from far climes to nibble eternally at the memorial pillars. There are a few shadows out there still but they are the weak and the timid and the hopelessly lost.
+
+It is immortality of a sort.
+
+Memory is immortality of a sort.
+
+In the night, when the wind dies and silence rules the place of glittering stone, I remember. And they all live again.
+
+@end quotation
+
 @samp{annalist.el} is a library that can be used to record information and later print that information using @samp{org-mode} headings and tables. It allows defining different types of things that can be recorded (e.g. keybindings, settings, hooks, and advice) and supports custom filtering, sorting, and formatting. @samp{annalist} is primarily intended for use in other packages like @samp{general} and @samp{evil-collection}, but it can also be used directly in a user's configuration.
 @end ifnottex
 
@@ -121,6 +132,11 @@ Annalist provides @samp{annalist-describe-hook} which is run in annalist descrip
 @node Defining New Types
 @section Defining New Types
 
+@quotation
+Three huge tomes bound in worn, cracked dark leather rested on a large, long stone lectern, as though waiting for three speakers to step up and read at the same time.
+
+@end quotation
+
 Annalist provides the function @code{annalist-define-tome} for defining new types of tomes:
 @lisp
 (annalist-define-tome 'battles
@@ -190,6 +206,11 @@ The settings plist past to the @samp{:record-update} function contains all infor
 
 @node Defining Views
 @section Defining Views
+
+@quotation
+In those days the company was in service to…
+
+@end quotation
 
 Views contain settings for formatting and displaying recorded information. Settings from the type definition cannot be changed later. On the other hand, views are for all settings that a user may want to change for a particular @code{annalist-describe} call. They are defined using the same format as tome types:
 @lisp
@@ -275,6 +296,13 @@ Formatting:
 @node Recording
 @section Recording
 
+@quotation
+The Lady said, “I wanted you to see this, Annalist.”
+[…]
+“What is about to transpire. So that it is properly recorded in at least one place.”
+
+@end quotation
+
 @code{annalist-record} is used to record information. It requires three arguments: @samp{annalist} @samp{type} @samp{record}. The @samp{annalist} argument will usually be the same as the package prefix that is recording the data. @samp{annalist} and any other names prefixed by @samp{annalist} are reserved for this package. @samp{type} is the type of data to record, and @samp{record} is the actual data. Optionally, the user can also specify metadata that won't be printed after the final item. Buffer-local records should additionally specify @samp{:local t}. Here is an example:
 @lisp
 (annalist-record 'me 'keybindings
@@ -300,6 +328,11 @@ Some items can potentially be recorded as nil. In the previous example, the evil
 
 @node Describing
 @section Describing
+
+@quotation
+Once each month, in the evening, the entire Company assembles so the Annalist can read from his predecessors.
+
+@end quotation
 
 @code{annalist-describe} is used to describe information. It takes three arguments: @samp{name} @samp{type view}. @samp{view} is optional (defaults to @samp{default}). For example:
 @lisp
