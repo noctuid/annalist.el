@@ -374,7 +374,7 @@ the symbols used for the definition of TYPE."
       (when plist
         (setq record (annalist-listify-record record type)))
       (when preprocess
-        (setq record (funcall preprocess record)))
+        (setq record (funcall preprocess record settings)))
       (unless (<= num-unspecified-items 0)
         (setq record (nconc record (make-list num-unspecified-items nil))))
       (puthash annalist
@@ -415,6 +415,7 @@ the symbols used for the definition of TYPE."
                              (sort records sorter)
                            records))
          (start-index (plist-get settings :table-start-index))
+         (postprocess (plist-get settings :postprocess))
          footnotes)
     ;; print header
     (annalist--print-table-header settings)
@@ -422,6 +423,8 @@ the symbols used for the definition of TYPE."
     (dolist (record sorted-records)
       (when (or (null predicate)
                 (funcall predicate record))
+        (when postprocess
+          (setq record (funcall postprocess record settings)))
         (cl-loop
          for i from start-index to (plist-get settings :final-index)
          do
@@ -617,7 +620,7 @@ source blocks as a single line."
             (insert content)))))))
 
 ;; * Keybindings Type
-(defun annalist--preprocess-keybinding (record)
+(defun annalist--preprocess-keybinding (record _settings)
   "Preprocess RECORD by normalizing the keymap.
 If the keymap is 'global and the state is non-nil, set the keymap to be the
 actual evil global keymap (e.g. 'evil-normal-state-map)."

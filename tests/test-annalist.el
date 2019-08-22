@@ -349,7 +349,7 @@ It concatenates the locations from OLD-RECORD and NEW-RECORD."
 |    0 | foo   | barbazqux |
 ")))
 
-(defun annalist-test-preprocess (record)
+(defun annalist-test-preprocess (record _settings)
   "Example :preprocess function that alters RECORD's location."
   (setf (nth 2 record) "Tower at Charm")
   record)
@@ -494,6 +494,33 @@ My brother unforgiven
 |------+--------+----------|
 |  544 | Battle | Charm    |
 "))))
+
+(defun annalist-test-postprocess (record _settings)
+  "Example :postprocess function that potentially alters RECORD's location."
+  (let ((location-abbreviation
+         (plist-get (nth 3 record) :location-abbreviation)))
+    (when location-abbreviation
+      (setf (nth 2 record) location-abbreviation)))
+  record)
+
+(describe "The top-level :postprocess keyword"
+  (it "should alter a record just before it is printed"
+    (annalist-test-tome-setup
+     :view (list :postprocess #'annalist-test-postprocess))
+    (annalist-record 'annalist-tester 'annalist-test
+                     '(544 "Battle of Charm" "Northern Continent"
+                           (:location-abbreviation "NC")))
+    (annalist-describe-expect 'annalist-tester 'annalist-test
+      "
+|  Year | Event                                             | Location           |
+|-------+---------------------------------------------------+--------------------|
+|   559 | The Siege of Dejagore begins                      | Southern Continent |
+| -1442 | Temple of Traveller's Repose is founded           | Southern Continent |
+|     0 | Beginning of the Domination                       | Northern Continent |
+|   470 | Tenth return of the Great Comet                   | Outer Space        |
+|   470 | The Lady and the Ten Who Were Taken are unearthed | Northern Continent |
+|   544 | Battle of Charm                                   | NC                 |
+")))
 
 ;; ** Item Keywords
 (describe "The item :test keyword"
@@ -1163,6 +1190,10 @@ recently updated"
 
 ;; * Builtin Types
 ;; ** Keybindings Type
+(defun annalist-identity (record &rest _)
+  "Return RECORD."
+  record)
+
 (describe "The annalist keybindings default view"
   (before-each
     (setq annalist-test-map (make-sparse-keymap))
@@ -1320,7 +1351,8 @@ recently updated"
 | =C-S-z= | ~bar~      | ~foo~    |
 "))
     (it "and work with a state and 'global as the keymap"
-      (advice-add 'annalist--preprocess-keybinding :override #'identity)
+      (advice-add 'annalist--preprocess-keybinding
+                  :override #'annalist-identity)
       (evil-define-key 'normal 'global (kbd "C-c a") 'foo)
       (annalist-record 'annalist-tester 'keybindings
                        (list 'global 'normal (kbd "C-c a") 'bar))
@@ -1332,9 +1364,10 @@ recently updated"
 |---------+------------+----------|
 | =C-c a= | ~bar~      | ~foo~    |
 ")
-      (advice-remove 'annalist--preprocess-keybinding #'identity))
+      (advice-remove 'annalist--preprocess-keybinding #'annalist-identity))
     (it "and work with a state and 'local as the keymap"
-      (advice-add 'annalist--preprocess-keybinding :override #'identity)
+      (advice-add 'annalist--preprocess-keybinding
+                  :override #'annalist-identity)
       (evil-define-key 'normal 'local (kbd "C-c a") 'foo)
       (annalist-record 'annalist-tester 'keybindings
                        (list 'local 'normal (kbd "C-c a") 'bar)
@@ -1348,7 +1381,7 @@ recently updated"
 |---------+------------+----------|
 | =C-c a= | ~bar~      | ~foo~    |
 ")
-      (advice-remove 'annalist--preprocess-keybinding #'identity))
+      (advice-remove 'annalist--preprocess-keybinding #'annalist-identity))
     (it "and work with an evil auxiliary keymap"
       (evil-define-key 'normal annalist-test-map
         (kbd "C-c a") 'foo)

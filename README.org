@@ -19,7 +19,7 @@
   - [[#defining-new-types][Defining New Types]]
     - [[#type-top-level-settings][Type Top-level Settings]]
     - [[#type-item-settings][Type Item Settings]]
-    - [[#update-record-settings-argument][=:update-record= Settings Argument]]
+    - [[#update-record-preprocess-and-postprocess-settings-argument][=:update-record=, =:preprocess=, and =:postprocess= Settings Argument]]
   - [[#defining-views][Defining Views]]
     - [[#view-top-level-settings][View Top-level Settings]]
     - [[#view-item-settings][View Item Settings]]
@@ -73,7 +73,7 @@ These settings apply to the entirety of the recorded information.
 - =:table-start-index= - the index of the first item to be printed in an org table; previous items are printed as headings (default: none)
 - =:primary-key= - the item or list of items that uniquely identifies the record; used with the  =:test= values for those items to check for an old record that should be replaced/updated (default: none)
 - =:record-update= - a function used to update a record before recording it; this can be used to, for example, set the value of an item to store the previous value of another item; the function is called with =old-record= (nil if none), =new-record=, and =settings=; see ~annalist--update-keybindings~ for an example of how to create such a function (default: none)
-- =:preprocess= - a function used to alter a record before doing anything with it; it is passed the record and should return the altered record; see the default keybindings type for an example (default: none)
+- =:preprocess= - a function used to alter a record before doing anything with it; it is passed =record= and =settings= and should return the altered record; see the default keybindings type for an example (default: none)
 - =:test= - test function used for comparing the primary key (as a list of each item in the order it appears in the definition); you will need to create the test with ~define-hash-table-test~ if it does not exist (default: ~equal~; generally should be unnecessary to change)
 - =:defaults= - a plist of default item settings; see below for valid item settings (default: none)
 
@@ -82,7 +82,7 @@ Item settings only apply to a specific item. Defaults for items that don't expli
 
 - =:test= - test function used for comparing items; only applicable to heading items; you will need to create the test with ~define-hash-table-test~ if it does not exist (default: ~equal~; generally should be unnecessary to change)
 
-*** =:update-record= Settings Argument
+*** =:update-record=, =:preprocess=, and =:postprocess= Settings Argument
 The settings plist past to the =:record-update= function contains all information for both the tome type and view. The information is converted into a valid plist and some extra keywords are added. Here is an example:
 #+begin_src emacs-lisp
 '(:table-start-index 2
@@ -117,6 +117,7 @@ These settings apply to the entirety of the recorded information.
 - =:predicate= - a function that is passed the entire record and returns non-nil if the record should be printed (default: none)
 - =:sort= - a function used to sort records in each printed table; the function is passed two records and and should return non-nil if the first record should come first (default: none; tables are printed in recorded order)
 - =:hooks= - a function or a list of functions to run in the describe buffer after printing all headings and tables before making the buffer readonly; these run before =annalist-describe-hook= (default: none)
+- =:postprocess= - a function used to alter a record just before printing it; it is passed =record= and =settings= and should return the altered record; an example use case would be to alter the record using its metadata (e.g. by replacing a keybinding definition with a which-key description, if one exists) (default: none)
 - =:defaults= - a plist of default item settings; see below for valid item settings (default: none)
 
 There is also a special =:inherit= keyword that can be used to create a new type of tome that is based on another type:
