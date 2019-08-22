@@ -37,6 +37,8 @@ In the night, when the wind dies and silence rules the place of glittering stone
 @end quotation
 
 @samp{annalist.el} is a library that can be used to record information and later print that information using @samp{org-mode} headings and tables. It allows defining different types of things that can be recorded (e.g. keybindings, settings, hooks, and advice) and supports custom filtering, sorting, and formatting. @samp{annalist} is primarily intended for use in other packages like @samp{general} and @samp{evil-collection}, but it can also be used directly in a user's configuration.
+
+@image{https://user-images.githubusercontent.com/4250696/63480582-64e2cb00-c460-11e9-9571-706b5b96992c,,,,png}
 @end ifnottex
 
 @menu
@@ -384,6 +386,10 @@ Formatting Emacs Lisp Source Blocks
 By default, Emacs Lisp extracted into source blocks will just be one long line. You can add @code{annalist-multiline-source-blocks} to a view's @samp{:hooks} keyword or to @samp{annalist-describe-hook} to autoformat org source blocks if lispy is installed. By default, it uses @code{lispy-alt-multiline}. To use @code{lispy-multiline} instead, customize @code{annalist-multiline-function}.
 
 The builtin types have @code{annlist-multiline-source-blocks} in their @samp{:hooks} setting by default.
+
+Here is an example of what this looks like:
+
+@image{https://user-images.githubusercontent.com/4250696/62338313-1025e300-b4a6-11e9-845f-179c02abef35,,,,png}
 @end enumerate
 
 @node Sorting Helpers

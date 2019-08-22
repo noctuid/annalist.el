@@ -21,6 +21,8 @@ In the night, when the wind dies and silence rules the place of glittering stone
 
 =annalist.el= is a library that can be used to record information and later print that information using =org-mode= headings and tables. It allows defining different types of things that can be recorded (e.g. keybindings, settings, hooks, and advice) and supports custom filtering, sorting, and formatting. =annalist= is primarily intended for use in other packages like =general= and =evil-collection=, but it can also be used directly in a user's configuration.
 
+[[file:https://user-images.githubusercontent.com/4250696/63480582-64e2cb00-c460-11e9-9571-706b5b96992c.png]]
+
 * Table of Contents :noexport:TOC:
 - [[#usage][Usage]]
   - [[#disabling-annalist][Disabling Annalist]]
@@ -238,6 +240,10 @@ Annalist provides ~annalist-verbatim~ (e.g. ~=verbatim text=~), ~annalist-code~ 
 By default, Emacs Lisp extracted into source blocks will just be one long line. You can add ~annalist-multiline-source-blocks~ to a view's =:hooks= keyword or to =annalist-describe-hook= to autoformat org source blocks if lispy is installed. By default, it uses ~lispy-alt-multiline~. To use ~lispy-multiline~ instead, customize ~annalist-multiline-function~.
 
 The builtin types have ~annlist-multiline-source-blocks~ in their =:hooks= setting by default.
+
+Here is an example of what this looks like:
+
+[[file:https://user-images.githubusercontent.com/4250696/62338313-1025e300-b4a6-11e9-845f-179c02abef35.png]]
 
 *** Sorting Helpers
 Annalist provides ~annalist-string-<~ and ~annalist-key-<~ (e.g. ~(kbd "C-c a")~ vs ~(kbd "C-c b")~).

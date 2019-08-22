@@ -35,12 +35,20 @@ elisp-lint:
 clean:
 	rm -f *.elc tests/*.elc *-autoloads.el tests/*-autoloads.el *\~ tests/*\~
 
-texi:
-	@# put index version of readme in annalist.org
-	@git show :README.org > annalist.org
-	@rm -f annalist.texi
-	EMACS=$(emacs) cask emacs $(BATCH) $(LOAD_OX) annalist.org $(EXPORT_TEXINFO)
-	@# Add missing final newline
-	@echo >> annalist.texi
+cask-texi:
+	EMACS=$(emacs) cask --path texi --verbose --debug
+	EMACS=$(emacs) cask update --path texi --verbose --debug
 
-.PHONY: cask test package-lint elisp-lint clean texi
+texi:
+	$(MAKE) cask-texi
+	@# put index version of readme in annalist.org
+	@git show :README.org > texi/annalist.org
+	@rm -f annalist.texi
+	@# NOTE pre-commit hook will fail if wrap this line
+	cd texi && EMACS=$(emacs) cask emacs $(BATCH) $(LOAD_OX) annalist.org $(EXPORT_TEXINFO)
+	@mv texi/annalist.texi ./
+	@# add missing final newline
+	@echo >> annalist.texi
+	@rm -f texi/annalist.org texi/*~
+
+.PHONY: cask test package-lint elisp-lint clean cask-texi texi

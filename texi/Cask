@@ -1,0 +1,4 @@
+(source org)
+
+(development
+ (depends-on "org-plus-contrib"))
