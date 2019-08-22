@@ -30,9 +30,10 @@ elisp-lint:
 	@# need separate command or will fail trying to find annalist-autoloads.el
 	EMACS=$(emacs) cask emacs $(BATCH) $(ELISP_LINT) \
 		"$(shell realpath tests/test-annalist.el)"
+	$(MAKE) clean
 
 clean:
-	rm -f *.elc tests/*.elc *-autoloads.el tests/*-autoloads.el *\~
+	rm -f *.elc tests/*.elc *-autoloads.el tests/*-autoloads.el *\~ tests/*\~
 
 texi:
 	@# put index version of readme in annalist.org
