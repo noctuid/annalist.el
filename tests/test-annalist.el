@@ -29,6 +29,10 @@
 (require 'annalist)
 (require 'org-element)
 (require 'evil)
+;; doesn't exist on Emacs 24 but is used by lispy
+(unless (boundp 'byte-compile-not-obsolete-vars)
+  (defvar byte-compile-not-obsolete-vars nil))
+(require 'lispy)
 
 (evil-mode)
 
