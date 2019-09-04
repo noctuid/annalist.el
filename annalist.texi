@@ -106,7 +106,7 @@ What fool always has his nose in everywhere because he thinks he has to know so 
 
 @end quotation
 
-If you use a library that uses @samp{annalist} (e.g. @samp{evil-collection} or @samp{general}) but don't need it's functionality during init or at all, you can set @samp{annalist-record} to nil to shave some milliseconds off of your init time (especially if you have a lot of keybindings). Alternatively, if you want to prevent @samp{annalist} from even loading, you can set the relevant packages' variables to nil (e.g. @samp{general-annalist-record}).
+If you use a library that uses @samp{annalist} (e.g. @samp{evil-collection} or @samp{general}) but don't need it's functionality during init or at all, you can set @samp{annalist-record} to nil to shave some milliseconds off of your init time (especially if you have a lot of keybindings). Alternatively, if you only want to prevent @samp{annalist} from recording certain things or have it only record certain things, you can configure @samp{annalist-record-blacklist} or @samp{annalist-record-whitelist} respectively.
 
 @node Terminology
 @section Terminology

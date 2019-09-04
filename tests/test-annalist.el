@@ -1125,6 +1125,82 @@ The Lady and the Ten Who Were Taken are unearthed
       (annalist-describe-expect 'annalist-tester 'annalist-test "
 
 ")))
+  (it "should do nothing if `annalist-record-blacklist' is matched"
+    (let ((annalist-record-blacklist (list '(annalist-tester annalist-test))))
+      (annalist-test-tome-setup)
+      (annalist-describe-expect 'annalist-tester 'annalist-test "
+
+"))
+    (let ((annalist-record-blacklist (list '(t annalist-test))))
+      (annalist-test-tome-setup)
+      (annalist-describe-expect 'annalist-tester 'annalist-test "
+
+"))
+    (let ((annalist-record-blacklist (list '(annalist-tester t))))
+      (annalist-test-tome-setup)
+      (annalist-describe-expect 'annalist-tester 'annalist-test "
+
+"))
+    (let ((annalist-record-blacklist (list '(t t))))
+      (annalist-test-tome-setup)
+      (annalist-describe-expect 'annalist-tester 'annalist-test "
+
+")))
+  (it "should do nothing if `annalist-record-whitelist' isn't matched"
+    (let ((annalist-record-whitelist (list '(annalist-tester annalist-test))))
+      (annalist-test-tome-setup)
+      (annalist-describe-expect 'annalist-tester 'annalist-test
+        "
+|  Year | Event                                             | Location           |
+|-------+---------------------------------------------------+--------------------|
+|   559 | The Siege of Dejagore begins                      | Southern Continent |
+| -1442 | Temple of Traveller's Repose is founded           | Southern Continent |
+|     0 | Beginning of the Domination                       | Northern Continent |
+|   470 | Tenth return of the Great Comet                   | Outer Space        |
+|   470 | The Lady and the Ten Who Were Taken are unearthed | Northern Continent |
+"))
+    (let ((annalist-record-whitelist (list '(t annalist-test))))
+      (annalist-test-tome-setup)
+      (annalist-describe-expect 'annalist-tester 'annalist-test
+        "
+|  Year | Event                                             | Location           |
+|-------+---------------------------------------------------+--------------------|
+|   559 | The Siege of Dejagore begins                      | Southern Continent |
+| -1442 | Temple of Traveller's Repose is founded           | Southern Continent |
+|     0 | Beginning of the Domination                       | Northern Continent |
+|   470 | Tenth return of the Great Comet                   | Outer Space        |
+|   470 | The Lady and the Ten Who Were Taken are unearthed | Northern Continent |
+"))
+    (let ((annalist-record-whitelist (list '(annalist-tester t))))
+      (annalist-test-tome-setup)
+      (annalist-describe-expect 'annalist-tester 'annalist-test
+        "
+|  Year | Event                                             | Location           |
+|-------+---------------------------------------------------+--------------------|
+|   559 | The Siege of Dejagore begins                      | Southern Continent |
+| -1442 | Temple of Traveller's Repose is founded           | Southern Continent |
+|     0 | Beginning of the Domination                       | Northern Continent |
+|   470 | Tenth return of the Great Comet                   | Outer Space        |
+|   470 | The Lady and the Ten Who Were Taken are unearthed | Northern Continent |
+"))
+    (let ((annalist-record-whitelist (list '(t t))))
+      (annalist-test-tome-setup)
+      (annalist-describe-expect 'annalist-tester 'annalist-test
+        "
+|  Year | Event                                             | Location           |
+|-------+---------------------------------------------------+--------------------|
+|   559 | The Siege of Dejagore begins                      | Southern Continent |
+| -1442 | Temple of Traveller's Repose is founded           | Southern Continent |
+|     0 | Beginning of the Domination                       | Northern Continent |
+|   470 | Tenth return of the Great Comet                   | Outer Space        |
+|   470 | The Lady and the Ten Who Were Taken are unearthed | Northern Continent |
+"))
+    (let ((annalist-record-whitelist (list '(foo t))))
+      (annalist-test-tome-setup)
+      (annalist-describe-expect 'annalist-tester 'annalist-test
+        "
+
+")))
   (it "should support recording a plist instead of an ordered list"
     (annalist-test-tome-setup :records nil)
     (annalist-record 'annalist-tester 'annalist-test

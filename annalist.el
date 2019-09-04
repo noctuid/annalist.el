@@ -46,6 +46,28 @@ Set this to nil if you never use `annalist-describe' and want to shave some
 milliseconds off of your init time."
   :type 'boolean)
 
+(define-widget 'annalist-list 'lazy
+  "List with elements in the form (<annalist-name> <tome-type>).
+Type for `annalist-record-blacklist' and `annalist-record-whitelist'."
+  :type '(choice (list (list symbol symbol))
+                 (const nil)))
+
+(defcustom annalist-record-whitelist nil
+  "Whitelist of annalist-name/tome-type pairs to allow recording.
+An example value would be (list (list 'annalist 'keybindings)). t can be
+specified to match all annalist names or tome types. Setting this variable is
+mutually exclusive with setting `annalist-record-blacklist'. Setting this
+variable will have no effect if variable `annalist-record' is nil."
+  :type 'annalist-list)
+
+(defcustom annalist-record-blacklist nil
+  "Blacklist of annalist-name/tome-type pairs to ignore.
+An example value would be (list (list 'annalist 'keybindings)). t can be
+specified to match all annalist names or tome types. Setting this variable is
+mutually exclusive with setting `annalist-record-whitelist'. Setting this
+variable will have no effect if variable `annalist-record' is nil."
+  :type 'annalist-list)
+
 (defcustom annalist-describe-hook nil
   "Hook run in the description buffer after it has been populated.
 The buffer is editable when this hook is run."
@@ -352,6 +374,29 @@ and recurse with an incremented DEPTH."
                store)
       store)))
 
+(defun annalist--matches-white-or-black-list-p (list annalist type)
+  "Return whether LIST has an entry matching ANNALIST and TYPE."
+  (cl-some (lambda (entry)
+             (cl-destructuring-bind (entry-annalist entry-type) entry
+               (and (or (eq entry-annalist t)
+                        (equal entry-annalist annalist))
+                    (or (eq entry-type t)
+                        (equal entry-type type)))))
+           list))
+
+(defun annalist--should-record-p (annalist type)
+  "Return whether recording for ANNALIST and TYPE is enabled.
+Consult variable `annalist-record', `annalist-record-whitelist', and
+`annalist-record-blacklist'."
+  (and annalist-record
+       (cond (annalist-record-whitelist
+              (annalist--matches-white-or-black-list-p
+               annalist-record-whitelist annalist type))
+             (annalist-record-blacklist
+              (not (annalist--matches-white-or-black-list-p
+                    annalist-record-blacklist annalist type)))
+             (t t))))
+
 ;;;###autoload
 (cl-defun annalist-record (annalist type record &key local plist)
   "In the store for ANNALIST, TYPE, and LOCAL, record RECORD.
@@ -364,7 +409,7 @@ list of items to record and later print as org headings and column entries in a
 single row. If PLIST is non-nil, RECORD should be a plist instead of an ordered
 list (e.g. '(keymap org-mode-map key \"C-c a\" ...)). The plist keys should be
 the symbols used for the definition of TYPE."
-  (when annalist-record
+  (when (annalist--should-record-p annalist type)
     (let* ((tome (annalist--tome type local))
            (settings (annalist--get-tome-settings type))
            (preprocess (plist-get settings :preprocess))
