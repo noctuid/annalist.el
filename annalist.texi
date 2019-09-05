@@ -23,6 +23,7 @@
 @node Top
 @top Annalist User Manual
 
+@uref{https://melpa.org/#/annalist, file:https://melpa.org/packages/annalist-badge.svg}
 @uref{https://travis-ci.org/noctuid/annalist.el, https://travis-ci.org/noctuid/annalist.el.svg?branch=master}
 
 @quotation

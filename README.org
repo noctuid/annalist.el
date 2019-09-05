@@ -7,6 +7,7 @@
 
 # NOTE: if you are viewing this in org-mode, it is recommended that you install and enable [[https://github.com/snosov1/toc-org][toc-org]], so that all internal links open correctly.
 
+[[https://melpa.org/#/annalist][file:https://melpa.org/packages/annalist-badge.svg]]
 [[https://travis-ci.org/noctuid/annalist.el][https://travis-ci.org/noctuid/annalist.el.svg?branch=master]]
 
 #+begin_quote
