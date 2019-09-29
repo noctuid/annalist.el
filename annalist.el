@@ -767,6 +767,7 @@ function for comparing key definitions."
          (new-def (nth 3 new-record))
          (test (annalist--test settings 'definition)))
     ;; keybinding may still be deferred
+    ;; TODO if defererd, record may keep an incorrect nil previous-def
     (when current-def
       (setf (nth 4 new-record)
             (annalist--previous-value old-record old-previous-def current-def

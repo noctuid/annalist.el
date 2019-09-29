@@ -64,7 +64,7 @@ Defining New Types
 
 * Type Top-level Settings::
 * Type Item Settings::
-* @samp{:update-record}, @samp{:preprocess}, and @samp{:postprocess} Settings Argument: @samp{update-record} @samp{preprocess} and @samp{postprocess} Settings Argument. 
+* @samp{:record-update}, @samp{:preprocess}, and @samp{:postprocess} Settings Argument: @samp{record-update} @samp{preprocess} and @samp{postprocess} Settings Argument. 
 
 Defining Views
 
@@ -156,7 +156,7 @@ At minimum, a type definition must include @samp{:primary-key}, @samp{:table-sta
 @menu
 * Type Top-level Settings::
 * Type Item Settings::
-* @samp{:update-record}, @samp{:preprocess}, and @samp{:postprocess} Settings Argument: @samp{update-record} @samp{preprocess} and @samp{postprocess} Settings Argument. 
+* @samp{:record-update}, @samp{:preprocess}, and @samp{:postprocess} Settings Argument: @samp{record-update} @samp{preprocess} and @samp{postprocess} Settings Argument. 
 @end menu
 
 @node Type Top-level Settings
@@ -189,8 +189,8 @@ Item settings only apply to a specific item. Defaults for items that don't expli
 @samp{:test} - test function used for comparing items; only applicable to heading items; you will need to create the test with @code{define-hash-table-test} if it does not exist (default: @code{equal}; generally should be unnecessary to change)
 @end itemize
 
-@node @samp{update-record} @samp{preprocess} and @samp{postprocess} Settings Argument
-@subsection @samp{:update-record}, @samp{:preprocess}, and @samp{:postprocess} Settings Argument
+@node @samp{record-update} @samp{preprocess} and @samp{postprocess} Settings Argument
+@subsection @samp{:record-update}, @samp{:preprocess}, and @samp{:postprocess} Settings Argument
 
 The settings plist past to the @samp{:record-update} function contains all information for both the tome type and view. The information is converted into a valid plist and some extra keywords are added. Here is an example:
 @lisp
