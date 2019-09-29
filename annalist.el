@@ -725,20 +725,24 @@ unbound/nil."
           (const :tag "When definition has changed" on-change)
           (const :tag "When the key was previously unbound" nil)))
 
-(defun annalist--previous-value (old-val current-val new-val &optional test)
+(defun annalist--previous-value (old-record old-val current-val new-val
+                                            &optional test)
   "Update a \"previous\" value for something.
-OLD-VAL is the currently stored \"previous\" value. CURRENT-VAL is the actual
-current value for the thing (which could potentially be different from the
-stored current value if not all functions that change the thing call function
+OLD-RECORD is the previous record or nil if there is no previous record. OLD-VAL
+is the currently stored \"previous\" value. CURRENT-VAL is the actual current
+value for the thing (which could potentially be different from the stored
+current value if not all functions that change the thing call function
 `annalist-record'). NEW-VAL is the new value that the thing will be changed to.
-TEST is the test to used to compare values (or `equal'). If there is no OlD-VAL
-or if NEW-VAL is still equal to CURRENT-VAL and
-`annalist-update-previous-key-definition' is non-nil, return CURRENT-VAL.
-Otherwise return OLD-VAL."
-  (if (or (null old-val)
-          (and annalist-update-previous-key-definition
-               (not (funcall (or test #'equal)
-                             current-val new-val))))
+TEST is the test to used to compare values (or `equal'). If there is no
+OlD-RECORD or if NEW-VAL is still equal to CURRENT-VAL and
+`annalist-update-previous-key-definition' is non-nil or if OLD-VAL is nil and
+`annalist-update-previous-key-definition' is nil, return CURRENT-VAL. Otherwise
+return OLD-VAL."
+  (if (or (null old-record)
+          (if annalist-update-previous-key-definition
+              (not (funcall (or test #'equal)
+                            current-val new-val))
+            (null old-val)))
       current-val
     old-val))
 
@@ -765,8 +769,8 @@ function for comparing key definitions."
     ;; keybinding may still be deferred
     (when current-def
       (setf (nth 4 new-record)
-            (annalist--previous-value old-previous-def current-def new-def
-                                      test)))
+            (annalist--previous-value old-record old-previous-def current-def
+                                      new-def test)))
     new-record))
 
 (defun annalist--valid-keymap-p (keymap-sym)

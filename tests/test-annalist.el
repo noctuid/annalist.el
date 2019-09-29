@@ -1381,6 +1381,19 @@ recently updated"
 #+end_src
 ")
   (describe "should update keybindings to show the prior keybinding (if one)"
+    (it "always if it is the first time recording something"
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'annalist-test-map nil (kbd "C-c a") 'foo))
+      (annalist-record 'annalist-tester 'keybindings
+                       (list 'annalist-test-map nil (kbd "C-c a") 'foo))
+      ;; previous should still show as nil
+      (annalist-describe-expect 'annalist-tester 'keybindings
+        "
+* ~annalist-test-map~
+| Key     | Definition | Previous |
+|---------+------------+----------|
+| =C-c a= | ~foo~      | ~nil~    |
+"))
     (it "with `annalist-update-previous-key-definition' as 'on-change"
       (annalist-record 'annalist-tester 'keybindings
                        (list 'annalist-test-map nil (kbd "C-c a") 'foo))
