@@ -54,7 +54,7 @@ Type for `annalist-record-blacklist' and `annalist-record-whitelist'."
 
 (defcustom annalist-record-whitelist nil
   "Whitelist of annalist-name/tome-type pairs to allow recording.
-An example value would be (list (list 'annalist 'keybindings)). t can be
+An example value would be (list (list \\='annalist \\='keybindings)). t can be
 specified to match all annalist names or tome types. Setting this variable is
 mutually exclusive with setting `annalist-record-blacklist'. Setting this
 variable will have no effect if variable `annalist-record' is nil."
@@ -62,7 +62,7 @@ variable will have no effect if variable `annalist-record' is nil."
 
 (defcustom annalist-record-blacklist nil
   "Blacklist of annalist-name/tome-type pairs to ignore.
-An example value would be (list (list 'annalist 'keybindings)). t can be
+An example value would be (list (list \\='annalist \\='keybindings)). t can be
 specified to match all annalist names or tome types. Setting this variable is
 mutually exclusive with setting `annalist-record-whitelist'. Setting this
 variable will have no effect if variable `annalist-record' is nil."
@@ -169,9 +169,9 @@ in either)."
 
 (defun annalist--test (settings item)
   "Return the test specified by :test in SETTINGS for ITEM's plist.
-SETTINGS is a plist in the form (ITEM1 (:test 'eq) ITEM2 (:test 'my-test)
-:defaults (:test 'some-test)). If :test is not in ITEM's plist, check for :test
-in the :defaults plist. If :test is in neither plist, return #'equal."
+SETTINGS is a plist in the form (ITEM1 (:test \\='eq) ITEM2 (:test \\='my-test)
+:defaults (:test \\='some-test)). If :test is not in ITEM's plist, check for :test
+in the :defaults plist. If :test is in neither plist, return #\\='equal."
   (or (annalist--item-get settings item :test)
       #'equal))
 
@@ -179,14 +179,14 @@ in the :defaults plist. If :test is in neither plist, return #'equal."
   "Convert DEFINITION-SETTINGS to an internally useable plist.
 DEFINITION-SETTINGS is a list of arguments for `annalist-define-tome'.
 For example:
-'(:test my-equal
+\\='(:test my-equal
   :primary-key (keymap key)
   keymap
   key
   definition)
 
 would become (ignoring order):
-'(:type TYPE
+\\='(:type TYPE
   :test my-equal
   :primary-key (keymap key)
   :key-indices (0 1)
@@ -313,7 +313,7 @@ SETTINGS be a list of items and any settings necessary for recording them."
 
 (cl-defun annalist-define-view (type name settings &key inherit)
   "Define a display method for TYPE called NAME.
-To define the default view SETTINGS, NAME should be 'default. If INHERIT is
+To define the default view SETTINGS, NAME should be \\='default. If INHERIT is
 non-nil, inherit SETTINGS from that view."
   (declare (indent 2))
   ;; exclude extra settings because may not have specified every item and don't
@@ -401,13 +401,13 @@ Consult variable `annalist-record', `annalist-record-whitelist', and
 (cl-defun annalist-record (annalist type record &key local plist)
   "In the store for ANNALIST, TYPE, and LOCAL, record RECORD.
 ANNALIST should correspond to the package/user recording this information (e.g.
-'general, 'me, etc.). TYPE is the type of information being recorded (e.g.
-'keybindings). LOCAL corresponds to whether to store RECORD only for the current
+\\='general, \\='me, etc.). TYPE is the type of information being recorded (e.g.
+\\='keybindings). LOCAL corresponds to whether to store RECORD only for the current
 buffer. This information together is used to select where RECORD should be
 stored in and later retrieved from with `annalist-describe'. RECORD should be a
 list of items to record and later print as org headings and column entries in a
 single row. If PLIST is non-nil, RECORD should be a plist instead of an ordered
-list (e.g. '(keymap org-mode-map key \"C-c a\" ...)). The plist keys should be
+list (e.g. \\='(keymap org-mode-map key \"C-c a\" ...)). The plist keys should be
 the symbols used for the definition of TYPE."
   (when (annalist--should-record-p annalist type)
     (let* ((tome (annalist--tome type local))
@@ -564,7 +564,7 @@ one."
 ;;;###autoload
 (defun annalist-describe (annalist type &optional view)
   "Describe information recorded by ANNALIST for TYPE.
-For example: (annalist-describe 'general 'keybindings) If VIEW is non-nil, use
+For example: (annalist-describe \\='general \\='keybindings) If VIEW is non-nil, use
 those settings for displaying recorded information instead of the defaults."
   (let* ((settings (annalist--merge-nested-plists
                     (annalist--get-view-settings type view)
@@ -667,8 +667,8 @@ source blocks as a single line."
 ;; * Keybindings Type
 (defun annalist--preprocess-keybinding (record _settings)
   "Preprocess RECORD by normalizing the keymap.
-If the keymap is 'global and the state is non-nil, set the keymap to be the
-actual evil global keymap (e.g. 'evil-normal-state-map)."
+If the keymap is \\='global and the state is non-nil, set the keymap to be the
+actual evil global keymap (e.g. \\='evil-normal-state-map)."
   (let* ((keymap-sym (nth 0 record))
          (state (nth 1 record)))
     (when (and state (memq keymap-sym '(global local)))
@@ -714,7 +714,7 @@ When a sub-sequence of KEY is bound, return nil instead of 1."
 
 (defcustom annalist-update-previous-key-definition 'on-change
   "When to update the stored previous key definition.
-When set to 'on-change, update the previous definition only when the old
+When set to \\='on-change, update the previous definition only when the old
 definition is different from the current one (e.g. evaluating a `define-key'
 call twice will not affect the stored previous definition the second time). When
 set to nil, only update the previous definition when the key was previously
@@ -778,7 +778,7 @@ function for comparing key definitions."
   "Return whether KEYMAP-SYM is bound.
 This is necessary since it is possible to record keybindings before they are
 actually defined (e.g. keybindings may be deferred until the keymap exists).
-'local and 'global are handled specially (return non-nil)."
+\\='local and \\='global are handled specially (return non-nil)."
   (or (memq keymap-sym '(local global))
       (boundp keymap-sym)))
 
