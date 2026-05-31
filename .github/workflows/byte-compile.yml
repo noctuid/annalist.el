@@ -1,0 +1,55 @@
+name: byte-compile
+
+on: [push, pull_request]
+
+jobs:
+  # Warnings-as-errors on the Emacs versions where the package compiles
+  # cleanly. Older Emacs (the declared minimum) emits warnings that
+  # originate from external macros (org-babel-map-src-blocks) and an
+  # optional evil function; those are checked without -Werror below.
+  byte-compile-werror:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        emacs_version:
+          - '30.1'
+          - snapshot
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Emacs
+        uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
+
+      - name: Byte-compile with warnings as errors
+        run: |
+          emacs -Q --batch \
+            --eval "(setq byte-compile-error-on-warn t)" \
+            --eval "(setq byte-compile-warnings t)" \
+            -f batch-byte-compile annalist.el
+
+  # Byte-compile and load on the declared minimum Emacs without
+  # warnings-as-errors. The residual warnings here come from an
+  # external macro expansion and an optional dependency and are out of
+  # scope for a behaviour-preserving fix.
+  byte-compile-min:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Emacs
+        uses: purcell/setup-emacs@master
+        with:
+          version: '24.4'
+
+      - name: Byte-compile
+        run: |
+          emacs -Q --batch \
+            --eval "(setq byte-compile-error-on-warn nil)" \
+            --eval "(setq byte-compile-warnings t)" \
+            -f batch-byte-compile annalist.el
+
+      - name: Load
+        run: emacs -Q --batch -l annalist.el
