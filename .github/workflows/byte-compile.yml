@@ -16,7 +16,7 @@ jobs:
           - '30.1'
           - snapshot
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up Emacs
         uses: purcell/setup-emacs@master
@@ -37,7 +37,7 @@ jobs:
   byte-compile-min:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up Emacs
         uses: purcell/setup-emacs@master
